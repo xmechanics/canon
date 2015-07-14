@@ -1,0 +1,7 @@
+[report]
+exclude_lines =
+    import
+    pragma: no cover
+    @staticmethod
+    @classmethod
+    if __name__ == '__main__':

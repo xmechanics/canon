@@ -25,7 +25,7 @@ setup(name='Canon',
       scripts = [],
       install_requires=(
           'numpy >= 1.9.0',
-          'enum >= 0.4.4'
+          'skimage >= 0.11.3'
       ),
       test_suite='nose.collector',
       tests_require = ['nose']
