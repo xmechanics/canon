@@ -1,7 +1,4 @@
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup
 
 import canon
 
@@ -23,12 +20,13 @@ setup(name='Canon',
           'Programming Language :: Python :: Implementation :: CPython'
       ),
       packages=(
-          'canon'
+          'canon',
       ),
       scripts = [],
       install_requires=(
-          'numpy >= 1.9.0'
+          'numpy >= 1.9.0',
+          'enum >= 0.4.4'
       ),
       test_suite='nose.collector',
-      tests_require=['nose']
+      tests_require = ['nose']
       )
