@@ -1,7 +1,10 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+<<<<<<< HEAD
 *$py.class
+=======
+>>>>>>> fd0f411870624ab119969f837e2e2d12519bb7d1
 
 # C extensions
 *.so
