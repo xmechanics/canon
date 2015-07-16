@@ -18,11 +18,12 @@ Hopefully, the code is sufficiently self-explanatory.
 
 ### Required
 
-- Numpy >= 1.6.0
+- numpy >= 1.6.0
+- skimage >= 0.11.3
 
 ### Optional
 
-- Scipy >= 0.11.0
+- scipy >= 0.11.0
 - numba
 
 ## Licence
