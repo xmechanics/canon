@@ -26,9 +26,13 @@ class Pilatus:
 
         if top == bottom: top += 1
 
+        gap = 1. * (top - bottom)
+        slope = (image[top, :] - image[bottom, :]) / gap
+        intersect = image[top, :] - slope * top
+
         # TODO:song - there must be a way to vectorize this step
         for x in xrange(bottom, top + 1):
-            image[x, :] = (image[top + 1, :] + image[bottom - 1, :]) / 2.
+            image[x, :] = slope * (x - 1) + intersect
 
     @staticmethod
     def __fill_middle_stripe(image):
@@ -41,9 +45,13 @@ class Pilatus:
 
         if left == right: right += 1
 
+        gap = 1. * (right - left)
+        slope = (image[:, right] - image[:, left]) / gap
+        intersect = image[:, right] - slope * right
+
         # TODO:song - there must be a way to vectorize this step
         for y in xrange(left, right + 1):
-            image[:, y] = (image[:, left - 1] + image[:, right + 1]) / 2.
+            image[:, y] = slope * (y - 1) + intersect
 
     @staticmethod
     def __find_vertical_black_edges(image, ycenter):

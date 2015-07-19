@@ -6,20 +6,29 @@ def subtract(image, cutoff):
     assert isinstance(image, np.ndarray)
     assert cutoff < 1
 
-    threshold = __bg_threshold(image, cutoff)
+    bg = __extract_bg(image, cutoff)
 
-    return np.where(image < threshold, 0, image)
-
-
-def extract_bg(img, cutoff):
-    threshold = __bg_threshold(img, cutoff)
-    return np.where(img < threshold, img, 0)
+    return image - bg
 
 
-def __bg_threshold(imgdata, cutoff):
-    cdf, bins = exposure.cumulative_distribution(imgdata, nbins=10000)
+def __extract_bg(img, cutoff):
+    hist, bins = exposure.histogram(img, nbins=10000)
+    histcuftoff = np.max(hist) * cutoff
+    bg_min, bg_max = np.inf, 0
 
-    for c, b in zip(cdf, bins):
-        if c > 1 - cutoff:
-            return b
+    for h, b in zip(hist, bins):
+        if h >= histcuftoff:
+            bg_min = min(bg_min, b)
+            bg_max = max(bg_max, b)
+
+    if bg_max == 0:
+        bg_max = 100. * histcuftoff
+
+    if bg_min > bg_max:
+        bg_min, bg_max = bg_max, bg_min
+
+    bg = np.where(img < bg_min, bg_min, img)
+    bg = np.where(bg > bg_max, bg_max, bg)
+
+    return bg
 
