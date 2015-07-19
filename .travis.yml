@@ -2,6 +2,6 @@ language: python
 python:
   - "2.7"
 # command to install dependencies
-install: "pip install -r requirements.txt"
+install: "pip install numpy; pip install scipy; pip install scikit-image; pip install -r requirements.txt"
 # command to run tests
 script: nosetests

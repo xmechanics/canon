@@ -1,6 +1,8 @@
 # Canon #
 
-![Codeship build status](https://codeship.com/projects/1dcd7cc0-0fe7-0133-d4b2-1e6fe7bb1028/status?branch=master)
+![Travis Status](https://travis-ci.org/structrans/Canon.svg?branch=master)
+![Codeship Status](https://codeship.com/projects/1dcd7cc0-0fe7-0133-d4b2-1e6fe7bb1028/status?branch=master)
+
 
 Canon is a python package for X-Ray Laue diffractometer analysis.
 
