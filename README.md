@@ -20,6 +20,8 @@ Hopefully, the code is sufficiently self-explanatory.
 
 ## Dependencies
 
+Recommand to use pre-compiled scientific python distributions, e.g. [Miniconda](http://conda.pydata.org/miniconda.html), a lightweight free version of [Anaconda](https://store.continuum.io/cshop/anaconda/).
+
 ### Required
 
 - numpy
