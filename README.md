@@ -1,7 +1,7 @@
 # Canon #
 
-![Travis Status](https://travis-ci.org/structrans/Canon.svg?branch=master)
-[![Coverage Status](https://coveralls.io/repos/structrans/Canon/badge.svg?branch=master&service=github)](https://coveralls.io/github/structrans/Canon?branch=master)
+[![Travis Status](https://travis-ci.org/structrans/Canon.svg?branch=master)](https://travis-ci.org/structrans/Canon)
+![Coverage Status](https://coveralls.io/repos/structrans/Canon/badge.svg?branch=master&service=github)
 ![Codeship Status](https://codeship.com/projects/1dcd7cc0-0fe7-0133-d4b2-1e6fe7bb1028/status?branch=master)
 
 
