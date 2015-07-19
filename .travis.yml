@@ -24,3 +24,7 @@ install:
 # Run test
 script:
   - nosetests
+
+# Calculate coverage
+after_success:
+  - coveralls --config_file .coveragerc
