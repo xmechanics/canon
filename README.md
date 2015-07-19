@@ -23,12 +23,12 @@ Hopefully, the code is sufficiently self-explanatory.
 
 ### Required
 
-- numpy >= 1.6.0
-- scikit-image >= 0.11.3
+- numpy
+- scipy
+- scikit-image
 
 ### Optional
 
-- scipy
 - numba
 
 ## Licence
