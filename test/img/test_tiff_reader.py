@@ -1,11 +1,11 @@
 import unittest
-import canon
 import numpy as np
+
+import canon
 from .. import resource
 
 
 class TiffReaderTestCase(unittest.TestCase):
-
     @staticmethod
     def ccd_generator():
         for ccd in ('pilatus',):
@@ -21,8 +21,9 @@ class TiffReaderTestCase(unittest.TestCase):
         self.assertRaises(canon.CanonException, canon.TiffReader, 'bad ccd')
 
     def test_goodccd(self):
-        for ccd in TiffReaderTestCase.ccd_generator():
+        for ccd in ('pilatus',):
             canon.TiffReader(ccd)
+            self.assertTrue(True)
 
     def test_load_tif(self):
         reader = TiffReaderTestCase.__pilatus_loadPillar5()
@@ -41,6 +42,20 @@ class TiffReaderTestCase(unittest.TestCase):
         final_black_spots = img.shape[0] * img.shape[1] - np.count_nonzero(img)
         self.assertLess(final_black_spots, original_black_spots, "Number of black spots should be reduced")
         self.assertLess(final_black_spots, 100, "Final number of black spots should be fewer than 100")
+
+    def test_find_peaks(self):
+        for npeaks in (15, 10, 5):
+            self.check_peaks(npeaks)
+
+    def check_peaks(self, npeaks):
+        reader = TiffReaderTestCase.__pilatus_loadPillar5()
+
+        peaks = reader.find_peaks(npeaks)
+        self.assertLess(abs(len(peaks) - npeaks), 2, "asked for %d peaks, but found %d" % (npeaks, len(peaks)))
+
+        reader.remove_background()
+        peaks = reader.find_peaks(npeaks)
+        self.assertLess(abs(len(peaks) - npeaks), 2, "asked for %d peaks, but found %d" % (npeaks, len(peaks)))
 
 if __name__ == '__main__':
     unittest.main()

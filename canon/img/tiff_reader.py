@@ -2,6 +2,7 @@ from skimage.external.tifffile import imread
 
 from ..__imports import *
 from subtract_bg import subtract
+from peaks import find_peaks
 from pilatus import Pilatus
 
 
@@ -39,6 +40,9 @@ class TiffReader:
         self.__reader.fill_black(self.__image)
 
     def remove_background(self, cutoff=0.001):
-        self.fill_black()
         self.__image = subtract(self.__image, cutoff)
 
+    def find_peaks(self, npeaks=float('inf')):
+        assert npeaks == float('inf') or isinstance(npeaks, int)
+
+        return find_peaks(self.__image, npeaks)

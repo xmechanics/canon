@@ -5,19 +5,8 @@ This module handles tiff images captured by Pilatus CCD
 from ..__imports import *
 
 
-# noinspection PyMethodMayBeStatic
+# noinspection PyMethodMayBeStatic,PyClassHasNoInit
 class Pilatus:
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def __remove_background(image):
-        """
-        param `image` will be modified
-        """
-        assert isinstance(image, np.ndarray)
-
-        Pilatus.__fill_black_space(image)
 
     @staticmethod
     def __fill_black_space(image):
@@ -99,10 +88,6 @@ class Pilatus:
             top_edge = image[top, :]
 
         return bottom, top
-
-    @staticmethod
-    def remove_background(image):
-        Pilatus.__remove_background(image)
 
     @staticmethod
     def fill_black(image):
