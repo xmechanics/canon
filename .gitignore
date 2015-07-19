@@ -6,7 +6,6 @@ __pycache__/
 # special for this project
 dev/
 *.DS_Store
-miniconda.sh
 
 # C extensions
 *.so
