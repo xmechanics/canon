@@ -1,9 +1,8 @@
 # Canon #
 
 [![Travis Status](https://travis-ci.org/structrans/Canon.svg?branch=master)](https://travis-ci.org/structrans/Canon)
-[![Coverage Status](https://coveralls.io/repos/structrans/Canon/badge.svg?branch=master&service=github)](https://coveralls.io/github/structrans/Canon?branch=master)
+[![Coverage Status](https://coveralls.io/repos/structrans/Canon/badge.svg?branch=master&service=github&v=new)](https://coveralls.io/github/structrans/Canon?branch=master)
 [![Codeship Status](https://codeship.com/projects/1dcd7cc0-0fe7-0133-d4b2-1e6fe7bb1028/status?branch=master)](https://codeship.com/projects/91981)
-
 
 Canon is a python package for X-Ray Laue diffractometer analysis.
 
