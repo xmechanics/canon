@@ -19,11 +19,11 @@ Hopefully, the code is sufficiently self-explanatory.
 ### Required
 
 - numpy >= 1.6.0
-- skimage >= 0.11.3
+- scikit-image >= 0.11.3
 
 ### Optional
 
-- scipy >= 0.11.0
+- scipy
 - numba
 
 ## Licence
