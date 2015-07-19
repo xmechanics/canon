@@ -22,8 +22,9 @@ setup(name='Canon',
       packages=('canon',),
       scripts = [],
       install_requires=(
-          'numpy >= 1.9.0',
-          'scikit-image >= 0.11.3'),
+          'numpy',
+          'scipy',
+          'scikit-image'),
       test_suite='nose.collector',
       tests_require = ('nose',)
 

@@ -49,10 +49,7 @@ class TiffReaderTestCase(unittest.TestCase):
 
     def check_peaks(self, npeaks):
         reader = TiffReaderTestCase.__pilatus_loadPillar5()
-
-        peaks = reader.find_peaks(npeaks)
-        self.assertLess(abs(len(peaks) - npeaks), 2, "asked for %d peaks, but found %d" % (npeaks, len(peaks)))
-
+        reader.fill_black()
         reader.remove_background()
         peaks = reader.find_peaks(npeaks)
         self.assertLess(abs(len(peaks) - npeaks), 2, "asked for %d peaks, but found %d" % (npeaks, len(peaks)))
