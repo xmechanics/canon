@@ -23,7 +23,7 @@ install:
  
 # Run test
 script:
-  - nosetests --processes=4
+  - nosetests --processes=2
 
 # Calculate coverage
 after_success:

@@ -1,5 +1,4 @@
 [report]
 exclude_lines =
-    import
     pragma: no cover
     if __name__ == '__main__':

@@ -4,9 +4,6 @@ import numpy as np
 import canon
 from .. import resource
 
-_TEST_TIFF = 'test00001.tiff'
-_TEST_TIFF_2 = 'peak_martensite.tif'
-_TEST_DAT = "test.DAT"
 _N_SAME_PEAKS = 15
 
 
@@ -14,9 +11,9 @@ class TiffReaderTestCase(unittest.TestCase):
     _multiprocess_can_split_ = True
 
     @staticmethod
-    def __pilatus_loadPillar5():
+    def __pilatus_load_test1():
         reader = canon.TiffReader('pilatus')
-        reader.loadtiff(resource(_TEST_TIFF))
+        reader.loadtiff(resource('test00001.tiff'))
         return reader
 
     @staticmethod
@@ -32,12 +29,6 @@ class TiffReaderTestCase(unittest.TestCase):
         peaks = np.array(peaks)
         return peaks
 
-    def setUp(self):
-        reader = canon.TiffReader('pilatus')
-        reader.loadtiff(resource(_TEST_TIFF))
-
-        self.reader = reader
-
     def test_badccd(self):
         self.assertRaises(canon.CanonException, canon.TiffReader, 'bad ccd')
 
@@ -47,16 +38,18 @@ class TiffReaderTestCase(unittest.TestCase):
             self.assertTrue(True)
 
     def test_load_tif(self):
-        img = self.reader.image()
+        reader = TiffReaderTestCase.__pilatus_load_test1()
+        img = reader.image()
         self.assertTrue(np.array_equal(img.shape, np.array([1043, 981])), "The image size should be 1043 x 981")
 
     def test_fill_black(self):
-        img = self.reader.image()
+        reader = TiffReaderTestCase.__pilatus_load_test1()
+        img = reader.image()
         original_black_spots = img.shape[0] * img.shape[1] - np.count_nonzero(img)
 
-        self.reader.fill_black()
+        reader.fill_black()
 
-        img = self.reader.image()
+        img = reader.image()
         final_black_spots = img.shape[0] * img.shape[1] - np.count_nonzero(img)
         self.assertLess(final_black_spots, original_black_spots, "Number of black spots should be reduced")
         self.assertLess(final_black_spots, 100, "Final number of black spots should be fewer than 100")
@@ -66,17 +59,19 @@ class TiffReaderTestCase(unittest.TestCase):
             yield self.check_peaks, npeaks
 
     def check_peaks(self, npeaks):
-        self.reader.fill_black()
-        self.reader.remove_background()
-        peaks = self.reader.find_peaks(npeaks)
+        reader = TiffReaderTestCase.__pilatus_load_test1()
+        reader.fill_black()
+        reader.remove_background()
+        peaks = reader.find_peaks(npeaks)
         self.assertLess(abs(len(peaks) - npeaks), 2, "asked for %d peaks, but found %d" % (npeaks, len(peaks)))
 
     def test_find_peaks_compare(self):
-        self.reader.fill_black()
-        self.reader.remove_background()
-        peaks = self.reader.find_peaks()
+        reader = TiffReaderTestCase.__pilatus_load_test1()
+        reader.fill_black()
+        reader.remove_background()
+        peaks = reader.find_peaks()
 
-        peaks2 = TiffReaderTestCase.__peaks_in_dat(resource(_TEST_DAT))
+        peaks2 = TiffReaderTestCase.__peaks_in_dat(resource("test.DAT"))
 
         same_peaks = TiffReaderTestCase.__same_peaks(peaks, peaks2)
         n_same_peaks = len(list(same_peaks))
@@ -86,7 +81,7 @@ class TiffReaderTestCase(unittest.TestCase):
 
     def test_find_many_peaks(self):
         reader = canon.TiffReader('pilatus')
-        reader.loadtiff(resource(_TEST_TIFF_2))
+        reader.loadtiff(resource('peak_martensite.tif'))
         reader.fill_black()
         reader.remove_background()
         peaks = reader.find_peaks()
