@@ -6,7 +6,7 @@ from canon.img.peaks import find_peaks
 
 
 class PeaksTestCase(unittest.TestCase):
-    _multiprocess_can_split_ = True     # each test has its own fixture
+    _multiprocess_shared_ = True
 
     img = None
 
