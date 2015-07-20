@@ -43,32 +43,18 @@ class TiffReaderTestCase(unittest.TestCase):
         img = reader.image()
         self.assertTrue(np.array_equal(img.shape, np.array([1043, 981])), "The image size should be 1043 x 981")
 
-    def test_fill_black(self):
-        reader = TiffReaderTestCase.__pilatus_load_test1()
-        img = reader.image()
-        original_black_spots = img.shape[0] * img.shape[1] - np.count_nonzero(img)
-
-        reader.fill_black()
-
-        img = reader.image()
-        final_black_spots = img.shape[0] * img.shape[1] - np.count_nonzero(img)
-        self.assertLess(final_black_spots, original_black_spots, "Number of black spots should be reduced")
-        self.assertLess(final_black_spots, 100, "Final number of black spots should be fewer than 100")
-
     def test_find_peaks(self):
         for npeaks in (15, 10, 5):
             yield self.check_peaks, npeaks
 
     def check_peaks(self, npeaks):
         reader = TiffReaderTestCase.__pilatus_load_test1()
-        reader.fill_black()
         reader.remove_background()
         peaks = reader.find_peaks(npeaks)
         self.assertLess(abs(len(peaks) - npeaks), 2, "asked for %d peaks, but found %d" % (npeaks, len(peaks)))
 
     def test_find_peaks_compare(self):
         reader = TiffReaderTestCase.__pilatus_load_test1()
-        reader.fill_black()
         reader.remove_background()
         peaks = reader.find_peaks()
 
@@ -83,7 +69,6 @@ class TiffReaderTestCase(unittest.TestCase):
     def test_find_many_peaks(self):
         reader = canon.TiffReader('pilatus')
         reader.loadtiff(resource('peak_martensite.tif'))
-        reader.fill_black()
         reader.remove_background()
         peaks = reader.find_peaks()
         self.assertGreater(len(peaks), 50, "should find more than 50 peaks in martensite pattern")

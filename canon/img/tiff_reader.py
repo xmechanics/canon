@@ -36,10 +36,8 @@ class TiffReader:
     def image(self):
         return self.__image.copy()
 
-    def fill_black(self):
-        self.__reader.fill_black(self.__image)
-
     def remove_background(self, cutoff=0.001):
+        self.__reader.fill_black(self.__image)
         self.__image = subtract(self.__image, cutoff)
 
     def find_peaks(self, npeaks=float('inf')):

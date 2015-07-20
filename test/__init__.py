@@ -1,5 +1,4 @@
 import os
-from canon import TiffReader
 
 __resource_dir__ = os.path.dirname(__file__) + "/resources/"
 

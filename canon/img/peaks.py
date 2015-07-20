@@ -10,7 +10,7 @@ def find_peaks(img, npeaks=float('inf')):
     peaks = peak_local_max(img, threshold_rel=threshold(log_th))
 
     while len(peaks) > npeaks and log_th > __MAX_THRESHOLD:
-        log_th -= 0.2
+        log_th -= 0.05
         peaks = peak_local_max(img, threshold_rel=threshold(log_th))
 
     return peaks
