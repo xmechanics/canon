@@ -1,35 +1,32 @@
-import unittest
+import pytest
 import canon
 
 from test import resource
 from canon.img.peaks import find_peaks
 
 
-class PeaksTestCase(unittest.TestCase):
-    _multiprocess_shared_ = True
+@pytest.fixture
+def pillar5():
+    reader = canon.TiffReader('pilatus')
+    reader.loadtiff(resource('Pillar5_00001.tif'))
+    reader.fill_black()
+    reader.remove_background()
+    return reader.image()
 
-    img = None
 
-    @classmethod
-    def setUpClass(cls):
-        reader = canon.TiffReader('pilatus')
-        reader.loadtiff(resource('Pillar5_00001.tif'))
-        reader.fill_black()
-        reader.remove_background()
-        PeaksTestCase.img = reader.image()
+def test_all_peaks(pillar5):
+    peaks = find_peaks(pillar5)
+    assert len(peaks) > 15
 
-    def test_all_peaks(self):
-        peaks = find_peaks(PeaksTestCase.img)
-        self.assertGreater(len(peaks), 15)
 
-    def test_peaks(self):
-        for npeaks in (15, 10, 5):
-            self.check_peaks(npeaks)
+@pytest.fixture(params=[15, 10, 5])
+def peaks_provider(request):
+    return find_peaks(pillar5(), request.param), request.param
 
-    def check_peaks(self, npeaks):
-        peaks = find_peaks(PeaksTestCase.img, npeaks)
-        self.assertLess(abs(len(peaks) - npeaks), 2, "asked for %d peaks, but found %d" % (npeaks, len(peaks)))
 
+def test_peaks(peaks_provider):
+    peaks, npeaks = peaks_provider
+    assert abs(len(peaks) - npeaks) < 1
 
 if __name__ == '__main__':
-    unittest.main()
+    pytest.main()

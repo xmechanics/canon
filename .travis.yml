@@ -24,7 +24,7 @@ install:
  
 # Run test
 script:
-  - py.test -n 4
+  - py.test -n 2
 
 # Calculate coverage
 after_success:

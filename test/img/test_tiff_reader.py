@@ -1,4 +1,5 @@
 import unittest
+import pytest
 import numpy as np
 
 import canon
@@ -109,4 +110,4 @@ class TiffReaderTestCase(unittest.TestCase):
                     i1 += 1
 
 if __name__ == '__main__':
-    unittest.main()
+    pytest.main()
