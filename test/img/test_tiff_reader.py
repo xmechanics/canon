@@ -6,6 +6,8 @@ from .. import resource
 
 
 class TiffReaderTestCase(unittest.TestCase):
+    _multiprocess_can_split_ = True     # each test has its own fixture
+
     @staticmethod
     def ccd_generator():
         for ccd in ('pilatus',):
