@@ -18,8 +18,9 @@ before_install:
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas nose scikit-image
   # Coverage packages are on my binstar channel
-  - conda install --yes -c dan_blanchard python-coveralls pytest-cov pytest-xdist
+  - conda install --yes -c dan_blanchard python-coveralls
   - pip install -r requirements.txt
+  - pip install pytest pytest-cov pytest-xdist
  
 # Run test
 script:
