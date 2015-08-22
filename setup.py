@@ -41,7 +41,7 @@ setup(name='Canon',
           'Programming Language :: Python :: 2',
           'Programming Language :: Python :: Implementation :: CPython'
       ),
-      packages=('canon',),
+      packages=('canon', 'canon.img', 'canon.util'),
       scripts = [],
       install_requires=(
           'numpy',
