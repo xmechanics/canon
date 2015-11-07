@@ -4,3 +4,5 @@ scipy
 scikit-image
 scikit-learn
 pytest
+pytest-coverage
+pytest-xdist
