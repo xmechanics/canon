@@ -28,6 +28,9 @@ import sys
 from timeit import default_timer as timer
 from itertools import groupby
 
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+
 from canon.dat.datreader import read_dats, idx2XY
 from canon.pattern.feature_extractor import AllPeaksExtractor, PeaksNumberExtractor, CombinedExtractor
 from canon.pattern.model import Model
@@ -103,12 +106,6 @@ def extract_features(extractor, sample_patterns):
                      (len(data[0]), len(sample_patterns), timer() - t0_loc))
 
     return data
-
-
-def train_clustering_model(data):
-    model = Model()
-    model.train(np.array(data))
-    return model
 
 
 def score_dir(extractor, model, dir_path, limit=None, batch_size=100):
@@ -216,7 +213,8 @@ if __name__ == '__main__':
     extractor = MPI_COMM.bcast(extractor, root=0)
 
     if MPI_RANK == 0:
-        model = train_clustering_model(data)
+        model = Model()
+        model.train(np.array(data), preprocessors=[StandardScaler(), PCA(whiten=True)])
     else:
         model = None
     model = MPI_COMM.bcast(model, root=0)

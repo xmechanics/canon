@@ -37,7 +37,7 @@ class AllPeaksExtractor(FeaturesExtractor):
             return sum
 
         intensities = intensity(self.__all_peaks[:, 0], self.__all_peaks[:, 1])
-        return intensities
+        return intensities.tolist()
 
     def peak_union(self, patterns):
         peaks_set = set()

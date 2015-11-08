@@ -15,19 +15,16 @@ class Model:
         self.__estimator = None
         self.__n_features_transformed = None
 
-    def train(self, data):
+    def train(self, data, preprocessors=[StandardScaler(), PCA(whiten=True)]):
         n_patterns = len(data)
         n_features = len(data[0])
         self.__n_features = n_features
 
         t_start = timer()
         logging.debug('Preprocessing %d patterns with %d features ...' % (n_patterns, n_features))
-
-        scaler = StandardScaler()
-        data = scaler.fit_transform(data)
-        pca = PCA(whiten=True)
-        data = pca.fit_transform(data)
-        self.__preprocessors = [scaler, pca]
+        for preprocessor in preprocessors:
+            data = preprocessor.fit_transform(data)
+        self.__preprocessors = preprocessors
 
         n_features = len(data[0])
         self.__n_features_transformed = n_features
