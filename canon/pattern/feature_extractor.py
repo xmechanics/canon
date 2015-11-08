@@ -12,18 +12,18 @@ class FeaturesExtractor:
     def n_features(self):
         return self.__n_features
 
-    def set_n_features(self, n):
+    def _set_n_features(self, n):
         self.__n_features = n
 
 
 class AllPeaksExtractor(FeaturesExtractor):
-    def __init__(self, sample_patterns, intensity_threshold=0.5, height=10, width=30):
+    def __init__(self, sample_patterns, intensity_threshold=0.5, gaussion_height=10, gaussian_width=30):
         FeaturesExtractor.__init__(self)
         self.__threshold = intensity_threshold
-        self.__height = height
-        self.__width = width
+        self.__height = gaussion_height
+        self.__width = gaussian_width
         self.__all_peaks = self.peak_union(sample_patterns)
-        self.set_n_features(len(self.__all_peaks))
+        self._set_n_features(len(self.__all_peaks))
 
     def features(self, pattern):
         peaks = _peaks_above_threshold(pattern, self.__threshold)
@@ -95,11 +95,24 @@ class PeaksNumberExtractor(FeaturesExtractor):
     def __init__(self, intensity_threshold=0.0):
         FeaturesExtractor.__init__(self)
         self.__threshold = intensity_threshold
-        self.set_n_features(1)
+        self._set_n_features(1)
 
     def features(self, pattern):
         peaks = _peaks_above_threshold(pattern, self.__threshold)
         return [len(peaks)]
+
+
+class CombinedExtractor(FeaturesExtractor):
+
+    def __init__(self, extractors):
+        FeaturesExtractor.__init__(self)
+        self.__extractors = extractors
+
+    def features(self, pattern):
+        fts = []
+        for extractor in self.__extractors:
+            fts += extractor.features(pattern)
+        return fts
 
 
 def _peaks_above_threshold(pattern, threshold):

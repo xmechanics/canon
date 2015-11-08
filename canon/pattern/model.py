@@ -11,68 +11,64 @@ class Model:
     def __init__(self):
         self.__n_features = None
         self.__n_clusters = None
-        self.__scaler = None
-        self.__pca = None
+        self.__preprocessors = []
         self.__estimator = None
-        self.__data = None
+        self.__n_features_transformed = None
 
     def train(self, data):
         n_patterns = len(data)
         n_features = len(data[0])
+        self.__n_features = n_features
 
         t_start = timer()
         logging.debug('Preprocessing %d patterns with %d features ...' % (n_patterns, n_features))
 
         scaler = StandardScaler()
-        scaler.fit_transform(data)
-        pca = PCA(n_components=None, whiten=True)
-        pca.fit_transform(data)
+        data = scaler.fit_transform(data)
+        pca = PCA(whiten=True)
+        data = pca.fit_transform(data)
+        self.__preprocessors = [scaler, pca]
 
+        n_features = len(data[0])
+        self.__n_features_transformed = n_features
         logging.info('Finished preprocessing of %d patterns with %d features. %.3f sec' %
                      (n_patterns, n_features, timer() - t_start))
 
-        self.__data = data
-        self.__n_features = n_features
-        self.__scaler = scaler
-        self.__pca = pca
-        self.__n_clusters = None
+        self.gmm_fit_iter(data)
 
-        self.gmm_fit_iter()
-
-        self.__data = []
-
-    def gmm_fit_iter(self):
+    def gmm_fit_iter(self, samples):
         t_start = timer()
-        self.__n_clusters = len(self.__data)
+        self.__n_clusters = len(samples)
         best_estimator = None
-        max_aic = None
+        min_aic = None
 
-        while best_estimator is None or self.__n_clusters >= 16:
+        while self.__n_clusters >= 16:
             self.__n_clusters /= 2
-            estimator = self.gmm_fit()
-            aic = estimator.aic(self.__data)
-            if max_aic is None:
-                max_aic = aic
-            if abs(aic) < 0.5 * abs(max_aic):
+            estimator = self.gmm_fit(samples, self.__n_clusters)
+            aic = estimator.aic(samples)
+            if min_aic is None:
+                min_aic = aic
+            if aic > min_aic and min(abs(aic), abs(min_aic)) < 0.5 * max(abs(min_aic), abs(aic)):
                 self.__n_clusters *= 2
                 break
-            else:
-                if abs(aic) >= abs(max_aic):
-                    best_estimator, max_aic = estimator, aic
+            elif aic <= min_aic:
+                best_estimator, min_aic = estimator, aic
+
         self.__estimator = best_estimator
         logging.info('Finally got a GMM model on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
-                     (len(self.__data), self.__n_features, self.__n_clusters, timer() - t_start,
-                      self.__estimator.aic(self.__data)))
+                     (len(samples), self.__n_features_transformed, self.__n_clusters, timer() - t_start,
+                      self.__estimator.aic(samples)))
 
-    def gmm_fit(self):
+    def gmm_fit(self, samples, n_clusters):
         t_start = timer()
+        n_features = len(samples[0])
         logging.debug('Running GMM on %d patterns using %d features for %d clusters ...' %
-                      (len(self.__data), self.__n_features, self.__n_clusters))
-        estimator = GMM(n_components=self.__n_clusters)
-        estimator.fit(self.__data)
+                      (len(samples), n_features, n_clusters))
+        estimator = GMM(n_components=n_clusters)
+        estimator.fit(samples)
         logging.info('Finished GMM on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
-                     (len(self.__data), self.__n_features, self.__n_clusters, timer() - t_start,
-                      estimator.aic(self.__data)))
+                     (len(samples), n_features, n_clusters, timer() - t_start,
+                      estimator.aic(samples)))
         return estimator
 
     def score(self, data, min_prob=0.8):
@@ -80,14 +76,19 @@ class Model:
             raise ValueError('The number of features [%d] in the data is different from that in the model [%d].' %
                              (len(data[0]), self.__n_features))
 
-        self.__scaler.transform(data)
-        self.__pca.transform(data)
+        for preprocessor in self.__preprocessors:
+            data = preprocessor.transform(data)
+
+        if len(data[0]) != self.__n_features_transformed:
+            raise ValueError('The number of transformed features [%d] in the data is different from that in the model [%d].' %
+                             (len(data[0]), self.__n_features_transformed))
+
         labels = [None] * len(data)
         probs = self.__estimator.predict_proba(data)
         for i, p in enumerate(probs):
             max_p = np.max(p)
             if max_p >= min_prob:
-                labels[i] = np.where(p == max_p)[0][0]
+                labels[i] = (np.where(p == max_p)[0][0], max_p)
         return labels
 
 

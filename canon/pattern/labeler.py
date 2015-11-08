@@ -2,19 +2,24 @@ from __future__ import absolute_import
 from canon.seq.seqreader import SeqReader
 
 
-# class SeqLabeler:
+class SeqLabeler:
 
-    # def __init__(self, seqfiles):
-    #     Z_merged, N_merged = None, None
-    #     for seqfile in seqfiles:
-    #         seq = read_seq(seqfile)
-    #         Z, _, N = get_Zmap(seq, 'orsnr___')
-    #         if Z_merged is None:
-    #             Z_merged, N_merged = Z, N
-    #         else:
-    #             Z_merged, N_merged = merge_Zmap(Z, Z_merged, N, N_merged)
-    #     self.__Z = Z_merged
-    #
-    # def evaluate(self, ix, iy):
-    #     z = self.__Z[ix, iy]
-    #     return z if z != 0 else None
+    def __init__(self, seqfiles):
+        Z_merged, N_merged = None, None
+        readers = map(SeqReader, seqfiles)
+        for reader in readers:
+            Z, _, N = reader.get_Zmap('orsnr___')
+            if Z_merged is None:
+                Z_merged, N_merged = Z, N
+            else:
+                Z_merged, N_merged = SeqReader.merge_Zmap(Z, Z_merged, N, N_merged)
+        self.__Z = Z_merged
+        self.__NX = len(self.__Z[0])
+
+    def evaluate(self, idx):
+        ix, iy = self.idx2XY(idx)
+        z = self.__Z[ix, iy]
+        return z if z != 0 else None
+
+    def idx2XY(self, idx):
+        return int((idx - 1) / self.__NX), (idx - 1) % self.__NX
