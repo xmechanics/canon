@@ -35,23 +35,23 @@ class Model:
 
     def gmm_fit_iter(self, samples):
         t_start = timer()
-        self.__n_clusters = len(samples)
+        n_clusters = len(samples)
         best_estimator = None
         min_aic = None
 
-        while self.__n_clusters >= 16:
-            self.__n_clusters /= 2
-            estimator = self.gmm_fit(samples, self.__n_clusters)
+        while n_clusters >= 16:
+            n_clusters /= 2
+            estimator = self.gmm_fit(samples, n_clusters)
             aic = estimator.aic(samples)
             if min_aic is None:
                 min_aic = aic
             if aic > min_aic and min(abs(aic), abs(min_aic)) < 0.5 * max(abs(min_aic), abs(aic)):
-                self.__n_clusters *= 2
                 break
             elif aic <= min_aic:
                 best_estimator, min_aic = estimator, aic
 
         self.__estimator = best_estimator
+        self.__n_clusters = self.__estimator.n_components
         logging.info('Finally got a GMM model on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
                      (len(samples), self.__n_features_transformed, self.__n_clusters, timer() - t_start,
                       self.__estimator.aic(samples)))
@@ -68,7 +68,7 @@ class Model:
                       estimator.aic(samples)))
         return estimator
 
-    def score(self, data, min_prob=0.8):
+    def score(self, data, min_prob=0.1):
         if len(data[0]) != self.__n_features:
             raise ValueError('The number of features [%d] in the data is different from that in the model [%d].' %
                              (len(data[0]), self.__n_features))

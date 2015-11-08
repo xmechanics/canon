@@ -31,10 +31,13 @@ from itertools import groupby
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-from canon.dat.datreader import read_dats, idx2XY
+from canon.dat.datreader import read_dats, read_txt, idx2XY, blacklist
 from canon.pattern.feature_extractor import AllPeaksExtractor, PeaksNumberExtractor, CombinedExtractor
 from canon.pattern.model import Model
 from canon.pattern.labeler import SeqLabeler
+
+
+read_file = read_dats
 
 
 def split_workload(loads, nproc):
@@ -51,6 +54,8 @@ def read_sample_patterns(dir_path, NX, step):
         logging.debug('Found %d files in the directory %s.' % (len(filenames), dir_path))
         sample_files = []
         for filename in filenames:
+            if filename in blacklist:
+                continue
             X, Y = idx2XY(int(filename[-9:-4]), NX)
             if X % step[0] == 0 and Y % step[1] == 0:
                 sample_files.append(os.path.join(dir_path, filename))
@@ -63,7 +68,7 @@ def read_sample_patterns(dir_path, NX, step):
     logging.debug('Assigned %d DAT files to read.' % len(filenames))
 
     t0_loc = timer()
-    patterns = read_dats(filenames)
+    patterns = read_file(filenames)
     logging.debug('Got %d [local] sample patterns. %g sec' % (len(patterns), timer() - t0_loc))
 
     patterns = MPI_COMM.gather(patterns, root=0)
@@ -110,7 +115,7 @@ def extract_features(extractor, sample_patterns):
 
 def score_dir(extractor, model, dir_path, limit=None, batch_size=100):
     if MPI_RANK == 0:
-        filenames = [os.path.join(dir_path, filename) for filename in os.listdir(dir_path)]
+        filenames = [os.path.join(dir_path, filename) for filename in os.listdir(dir_path) if filename not in blacklist]
         logging.debug('Found %d files in the directory %s.' % (len(filenames), dir_path))
         limit = len(filenames) if limit is None else min(limit, len(filenames))
         file_groups = split_workload(filenames[:limit], MPI_COMM.size)
@@ -148,10 +153,11 @@ def score_files_loc(extractor, model, filenames, batch_size=None):
 def score_batch(extractor, model, filenames):
     t0 = timer()
     indices = [int(f[-9:-4]) for f in filenames]
-    patterns = read_dats(filenames)
+    patterns = read_file(filenames)
     scores = model.score(np.array(map(extractor.features, patterns)))
-    logging.debug('Scored a batch of %d [local] patterns. %g sec' % (len(filenames), timer() - t0))
-    return zip(scores, indices)
+    logging.debug('Scored a batch of %d [local] patterns, %d are [None]. %g sec'
+                  % (len(filenames), sum(1 for s in scores if s is None), timer() - t0))
+    return [(s, i) for (s, i) in zip(scores, indices) if s is not None]
 
 
 def relabel(labeler, scoreinds):
@@ -180,32 +186,54 @@ def relabel_score_groups(labeler, groups):
     t0 = timer()
     new_scoreinds = []
     for scoreinds in groups:
-        new_score = None
-        for centroid in sorted(scoreinds, key=lambda si: si[0][1], reverse=True):
-            centroid_score = labeler.evaluate(centroid[1])
-            if centroid_score is not None:
-                new_score = centroid_score
-                break
-        new_scoreinds += [(new_score, si[1]) for si in scoreinds]
-        if new_score is None:
+        scoreinds = [si for si in scoreinds if si[0] is not None]
+        scoreinds = sorted(scoreinds, key=lambda si: si[0][1], reverse=True)
+        weighted_scores = []
+        for si in scoreinds[:min(len(scoreinds), 7)]:
+            score = labeler.evaluate(si[1])
+            if score is not None:
+                weighted_scores.append((score, si[0][1]))
+        centroid_score = np.sum([s * w for s, w in weighted_scores])/np.sum([w for _, w in weighted_scores]) \
+            if len(weighted_scores) > 0 else None
+        new_scoreinds += [(centroid_score, si[1]) for si in scoreinds]
+        if centroid_score is None:
             logging.warn('%d scores in cluster %d are re-labeled to [None]!' % (len(scoreinds), scoreinds[0][0][0]))
     logging.info('Re-labeled %d [local] scores. %g sec' % (sum(map(len, groups)), timer() - t0))
     return new_scoreinds
 
 
 if __name__ == '__main__':
-    dir_path = "/Users/sherrychen/project/seqviewer/peakfiles/quartz_500mpa"
-    seq_files = ("/Users/sherrychen/project/seqviewer/seqfiles/Quartz_500Mpa_.SEQ", )
+    # # Au30
+    # read_file = read_txt
+    # case_name = 'au30_mart4_fine'
+    # scratch = "/Users/sherrychen/scratch/"
+    # dir_path = scratch + "peaks/txt/" + case_name
+    # seq_files = [scratch + "seqfiles/" + f for f in ('m4fine_m.SEQ', 'm4fine_m0.SEQ','m4fine_m1g.SEQ', 'm4fine_m2.SEQ')] # 'm4fine_a.SEQ',
+    # all_peaks_threshold = 0.2
+    # # if MPI_RANK == 0:
+    # #     labeler = SeqLabeler(seq_files)
+    # NX = 100
+    # NY = 24
+    # step = (4, 10)
+    # sample_patterns = read_sample_patterns(dir_path, NX, (2, 3))    # sample_patterns on lives on core-0
+
+    # quartz
+    case_name = 'quartz_500mpa'
+    scratch = "/Users/sherrychen/scratch/"
+    dir_path = scratch + "peaks/dat/" + case_name
+    seq_files = (scratch + "seqfiles/" + 'Quartz_500Mpa_.SEQ', )
     NX = 120
     NY = 120
     step = (5, 5)
+    all_peaks_threshold = 0.9
     sample_patterns = read_sample_patterns(dir_path, NX, (4, 4))    # sample_patterns on lives on core-0
 
     if MPI_RANK == 0:
         t0 = timer()
-        extractor1 = AllPeaksExtractor(sample_patterns, intensity_threshold=0.7, gaussion_height=10, gaussian_width=30)
-        extractor2 = PeaksNumberExtractor(intensity_threshold=0.5)
-        extractor = CombinedExtractor([extractor2, extractor1])
+        extractor1 = AllPeaksExtractor(sample_patterns, intensity_threshold=all_peaks_threshold, gaussion_height=10, gaussian_width=30)
+        extractor2 = PeaksNumberExtractor(intensity_threshold=0.0)
+        # extractor = CombinedExtractor([extractor2, extractor1])
+        extractor = extractor2
         logging.info("Constructed a feature extractor. %g sec" % (timer() - t0))
     else:
         extractor = None
@@ -214,12 +242,13 @@ if __name__ == '__main__':
 
     if MPI_RANK == 0:
         model = Model()
-        model.train(np.array(data), preprocessors=[StandardScaler(), PCA(whiten=True)])
+        model.train(np.array(data), preprocessors=[StandardScaler()])
+        # model.train(np.array(data), preprocessors=[StandardScaler(), PCA(whiten=True)])
     else:
         model = None
     model = MPI_COMM.bcast(model, root=0)
 
-    scoreinds = score_dir(extractor, model, dir_path, limit=4800, batch_size=200)
+    scoreinds = score_dir(extractor, model, dir_path, limit=None, batch_size=200)
 
     if MPI_RANK == 0:
         labeler = SeqLabeler(seq_files)
@@ -229,16 +258,19 @@ if __name__ == '__main__':
     scoreinds = relabel(labeler, scoreinds)
 
     if MPI_RANK == 0:
-        Z = np.min([c[0] for c in scoreinds if c[0] is not None]) * np.ones([NY, NX])
+        Z = np.empty([NY, NX])
+        Z[:] = np.nan
         for score, idx in scoreinds:
             if score is not None:
-                ix, iy = labeler.idx2XY(idx)
-                Z[ix, iy] = score
-        np.savetxt('Z.txt', Z, fmt='%.3f')
+                ix, iy = idx2XY(idx, NX)
+                if ix < NY:
+                    Z[ix, iy] = score
+        logging.debug('Z matrix has %d nans' % sum(1 for row in Z for z in row if np.isnan(z)))
+        np.savetxt('Z.txt', Z)
         logging.info('Write Z matrix into Z.txt in ' + os.path.dirname(os.path.abspath(__file__)))
 
         from plotseq import plot_seq
         # # Z = np.loadtxt('Z.txt')
-        plot_seq(Z, step, colormap='jet', filename="clustering_quartz500Mpa")
+        plot_seq(Z, step, colormap='jet', filename=scratch + "img/clustering_" + case_name)
 
 

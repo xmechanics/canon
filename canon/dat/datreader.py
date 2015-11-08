@@ -1,5 +1,6 @@
 import os
 
+blacklist = set(['.DS_Store'])
 
 def read_dats_indir(dir_path):
     filenames = []
@@ -17,6 +18,22 @@ def read_dats(files):
         for line in f:
             elems = line.split()
             x, y, z = (int(float(elems[0])), int(float(elems[1])), float(elems[3]))
+            pattern.append([x, y, z])
+        patterns.append(pattern)
+        f.close()
+    return patterns
+
+
+def read_txt(files):
+    patterns = []
+    for file in files:
+        if file in blacklist:
+            continue
+        f = open(file, 'r')
+        pattern = []
+        for line in f:
+            elems = line.split(',')
+            x, y, z = (int(float(elems[0])), int(float(elems[1])), float(elems[2]))
             pattern.append([x, y, z])
         patterns.append(pattern)
         f.close()

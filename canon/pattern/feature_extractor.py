@@ -99,7 +99,7 @@ class PeaksNumberExtractor(FeaturesExtractor):
 
     def features(self, pattern):
         peaks = _peaks_above_threshold(pattern, self.__threshold)
-        return [len(peaks)]
+        return [float(len(peaks))]
 
 
 class CombinedExtractor(FeaturesExtractor):

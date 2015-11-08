@@ -15,10 +15,13 @@ class SeqLabeler:
                 Z_merged, N_merged = SeqReader.merge_Zmap(Z, Z_merged, N, N_merged)
         self.__Z = Z_merged
         self.__NX = len(self.__Z[0])
+        self.__NY = len(self.__Z)
 
     def evaluate(self, idx):
-        ix, iy = self.idx2XY(idx)
-        z = self.__Z[ix, iy]
+        iy, ix = self.idx2XY(idx)
+        if ix >= self.__NX or iy >= self.__NY:
+            return None
+        z = self.__Z[iy, ix]
         return z if z != 0 else None
 
     def idx2XY(self, idx):

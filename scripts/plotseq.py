@@ -1,4 +1,5 @@
 import os
+import logging
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
@@ -6,7 +7,7 @@ import matplotlib
 
 def plot_seq(Z, step, colormap='gist_ncar', filename='untitled'):
     dir = os.path.dirname(os.path.abspath(__file__))
-    save_directory = os.path.join(dir, 'img/{:s}.png'.format(filename))
+    save_directory = os.path.join(dir, '{:s}.png'.format(filename))
     x_step = step[0]
     y_step = step[1]
     # save_directory = 'img/au27_m{:s}.png'.format(key)
@@ -19,8 +20,10 @@ def plot_seq(Z, step, colormap='gist_ncar', filename='untitled'):
     ax.set_ylabel('Y ({:d} um/px)'.format(y_step))
     ax.set_xlabel('X ({:d} um/px)'.format(x_step))
 
-    ax.imshow(Z[::-1, ::], interpolation='none', cmap=colormap,
-              aspect=y_step / x_step, vmin=np.min(Z), vmax=np.max(Z))
+    cmap = plt.get_cmap(colormap)
+    cmap.set_bad(color='k', alpha=None)
+    Z_mask = np.ma.array(Z, mask=np.isnan(Z))
+    ax.imshow(Z[::-1, ::], interpolation='none', cmap=cmap, aspect=y_step / x_step, vmin=np.min(Z_mask), vmax=np.max(Z_mask))
     plt.savefig(save_directory, bbox_inches='tight', dpi=150)
 
 
