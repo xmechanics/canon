@@ -2,6 +2,7 @@ import os
 
 blacklist = set(['.DS_Store'])
 
+
 def read_dats_indir(dir_path):
     filenames = []
     for file in os.listdir(dir_path):

@@ -2,11 +2,10 @@ import numpy as np
 import logging
 from timeit import default_timer as timer
 from sklearn.mixture import GMM
-from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 
-class Model:
+class GMMModel:
 
     def __init__(self):
         self.__n_features = None
@@ -15,7 +14,7 @@ class Model:
         self.__estimator = None
         self.__n_features_transformed = None
 
-    def train(self, data, preprocessors=[StandardScaler(), PCA(whiten=True)]):
+    def train(self, data, preprocessors=[StandardScaler()]):
         n_patterns = len(data)
         n_features = len(data[0])
         self.__n_features = n_features
@@ -68,7 +67,7 @@ class Model:
                       estimator.aic(samples)))
         return estimator
 
-    def score(self, data, min_prob=0.1):
+    def score(self, data, min_prob=0.8):
         if len(data[0]) != self.__n_features:
             raise ValueError('The number of features [%d] in the data is different from that in the model [%d].' %
                              (len(data[0]), self.__n_features))

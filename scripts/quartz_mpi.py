@@ -1,26 +1,4 @@
-# ==================================================
-# BEGIN - MPI settings
-# ==================================================
-from mpi4py import MPI
-
-MPI_COMM = MPI.COMM_WORLD
-MPI_RANK = MPI_COMM.Get_rank()
-
-# log to console
-import logging
-
-if MPI_COMM.size == 1:
-    logFormatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-else:
-    logFormatter = logging.Formatter("%(asctime)s [%(levelname)s] [Process-" + str(MPI_RANK) + "] %(message)s")
-rootLogger = logging.getLogger()
-consoleHandler = logging.StreamHandler()
-consoleHandler.setFormatter(logFormatter)
-rootLogger.addHandler(consoleHandler)
-rootLogger.setLevel(logging.DEBUG)
-# ==================================================
-# END - MPI settings
-# ==================================================
+from canon.mpi.init import *
 
 import numpy as np
 import os
@@ -33,7 +11,7 @@ from sklearn.preprocessing import StandardScaler
 
 from canon.dat.datreader import read_dats, read_txt, idx2XY, blacklist
 from canon.pattern.feature_extractor import AllPeaksExtractor, PeaksNumberExtractor, CombinedExtractor
-from canon.pattern.model import Model
+from canon.pattern.model import GMMModel
 from canon.pattern.labeler import SeqLabeler
 
 
@@ -241,7 +219,7 @@ if __name__ == '__main__':
     extractor = MPI_COMM.bcast(extractor, root=0)
 
     if MPI_RANK == 0:
-        model = Model()
+        model = GMMModel()
         model.train(np.array(data), preprocessors=[StandardScaler()])
         # model.train(np.array(data), preprocessors=[StandardScaler(), PCA(whiten=True)])
     else:
