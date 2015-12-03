@@ -167,7 +167,7 @@ def relabel_score_groups(labeler, groups):
         scoreinds = [si for si in scoreinds if si[0] is not None]
         scoreinds = sorted(scoreinds, key=lambda si: si[0][1], reverse=True)
         weighted_scores = []
-        for si in scoreinds[:min(len(scoreinds), 7)]:
+        for si in scoreinds[:min(len(scoreinds), 1000)]:
             score = labeler.evaluate(si[1])
             if score is not None:
                 weighted_scores.append((score, si[0][1]))
@@ -181,37 +181,37 @@ def relabel_score_groups(labeler, groups):
 
 
 if __name__ == '__main__':
-    # # Au30
-    # read_file = read_txt
-    # case_name = 'au30_mart4_fine'
-    # scratch = "/Users/sherrychen/scratch/"
-    # dir_path = scratch + "peaks/txt/" + case_name
-    # seq_files = [scratch + "seqfiles/" + f for f in ('m4fine_m.SEQ', 'm4fine_m0.SEQ','m4fine_m1g.SEQ', 'm4fine_m2.SEQ')] # 'm4fine_a.SEQ',
-    # all_peaks_threshold = 0.2
-    # # if MPI_RANK == 0:
-    # #     labeler = SeqLabeler(seq_files)
-    # NX = 100
-    # NY = 24
-    # step = (4, 10)
-    # sample_patterns = read_sample_patterns(dir_path, NX, (2, 3))    # sample_patterns on lives on core-0
-
-    # quartz
-    case_name = 'quartz_500mpa'
+    # Au30
+    read_file = read_txt
+    case_name = 'au30_area2_2k'
     scratch = "/Users/sherrychen/scratch/"
-    dir_path = scratch + "peaks/dat/" + case_name
-    seq_files = (scratch + "seqfiles/" + 'Quartz_500Mpa_.SEQ', )
-    NX = 120
-    NY = 120
-    step = (5, 5)
-    all_peaks_threshold = 0.9
-    sample_patterns = read_sample_patterns(dir_path, NX, (4, 4))    # sample_patterns on lives on core-0
+    dir_path = scratch + "peaks/txt/" + case_name
+    seq_files = [scratch + "seqfiles/" + f for f in ('au30_a1_.SEQ', 'au30_m1_.SEQ')] # 'm4fine_a.SEQ',
+    all_peaks_threshold = 0.8
+    # if MPI_RANK == 0:
+    #     labeler = SeqLabeler(seq_files)
+    NX = 100
+    NY = 20
+    step = (2, 2)
+    sample_patterns = read_sample_patterns(dir_path, NX, (1, 1))    # sample_patterns on lives on core-0
+
+    # # quartz
+    # case_name = 'quartz_500mpa'
+    # scratch = "/Users/sherrychen/scratch/"
+    # dir_path = scratch + "peaks/dat/" + case_name
+    # seq_files = (scratch + "seqfiles/" + 'Quartz_500Mpa_.SEQ', )
+    # NX = 120
+    # NY = 120
+    # step = (5, 5)
+    # all_peaks_threshold = 0.9
+    # sample_patterns = read_sample_patterns(dir_path, NX, (4, 4))    # sample_patterns on lives on core-0
 
     if MPI_RANK == 0:
         t0 = timer()
-        extractor1 = AllPeaksExtractor(sample_patterns, intensity_threshold=all_peaks_threshold, gaussion_height=10, gaussian_width=30)
+        extractor1 = AllPeaksExtractor(sample_patterns, intensity_threshold=all_peaks_threshold, gaussion_height=1, gaussian_width=5)
         extractor2 = PeaksNumberExtractor(intensity_threshold=0.0)
-        # extractor = CombinedExtractor([extractor2, extractor1])
-        extractor = extractor2
+        extractor = CombinedExtractor([extractor2, extractor1])
+        # extractor = extractor2
         logging.info("Constructed a feature extractor. %g sec" % (timer() - t0))
     else:
         extractor = None
