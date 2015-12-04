@@ -2,6 +2,7 @@ import numpy as np
 import logging
 from timeit import default_timer as timer
 from sklearn.mixture import GMM
+from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
 
@@ -86,6 +87,39 @@ class GMMModel:
             if max_p >= min_prob:
                 labels[i] = (np.where(p == max_p)[0][0], max_p)
         return labels
+
+
+class KMeansModel:
+
+    def __init__(self):
+        self.__n_features = None
+        self.__estimator = None
+
+    def train(self, samples, n_clusters):
+        n_features = len(samples[0])
+        self.__n_features = n_features
+        self.kmeans_fit(samples, n_clusters)
+
+    def kmeans_fit(self, samples, n_clusters):
+        t_start = timer()
+        n_features = len(samples[0])
+        logging.debug('Running KMeans on %d patterns using %d features for %d clusters ...' %
+                      (len(samples), n_features, n_clusters))
+        self.__estimator = KMeans(n_clusters=n_clusters)
+        self.__estimator.fit(samples)
+        self.__estimator.fit_transform(samples)
+        self.__estimator.fit_predict(samples)
+        logging.info('Finished KMeans on %d patterns using %d features for %d clusters. %.3f sec.' %
+                     (len(samples), n_features, n_clusters, timer() - t_start))
+
+    def score(self, samples):
+        if len(samples[0]) != self.__n_features:
+            raise ValueError('The number of features [%d] in the data is different from that in the model [%d].' %
+                             (len(samples[0]), self.__n_features))
+
+        labels = self.__estimator.predict(samples)
+        return labels
+
 
 
 
