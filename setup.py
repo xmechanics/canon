@@ -31,7 +31,7 @@ setup(name='Canon',
       author=('Xian Chen', 'Yintao Song'),
       author_email=('xianchen@ust.hk', 'yintaosong@gmail.com'),
       license='LICENSE',
-      classifiers = (
+      classifiers=(
           'Development Status :: 3 - Alpha',
           'Environment :: Console',
           'Intended Audience :: Education',
@@ -48,5 +48,5 @@ setup(name='Canon',
           'scipy',
           'scikit-image'),
       tests_require=['pytest'],
-      cmdclass = {'test': PyTest}
+      cmdclass={'test': PyTest}
       )

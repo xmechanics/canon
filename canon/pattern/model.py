@@ -6,34 +6,64 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
 
-class GMMModel:
+class Model:
 
     def __init__(self):
         self.__n_features = None
         self.__n_clusters = None
         self.__preprocessors = []
         self.__estimator = None
-        self.__n_features_transformed = None
+        self._n_features_transformed = None
 
-    def train(self, data, preprocessors=[StandardScaler()]):
+    def train(self, data, preprocessors=None, n_clusters=None):
         n_patterns = len(data)
         n_features = len(data[0])
         self.__n_features = n_features
 
         t_start = timer()
-        logging.debug('Preprocessing %d patterns with %d features ...' % (n_patterns, n_features))
+        logging.debug('Pre-processing %d patterns with %d features ...' % (n_patterns, n_features))
+        if preprocessors is None:
+            preprocessors = [StandardScaler()]
         for preprocessor in preprocessors:
             data = preprocessor.fit_transform(data)
         self.__preprocessors = preprocessors
 
         n_features = len(data[0])
-        self.__n_features_transformed = n_features
-        logging.info('Finished preprocessing of %d patterns with %d features. %.3f sec' %
+        self._n_features_transformed = n_features
+        logging.info('Finished pre-processing of %d patterns with %d features. %.3f sec' %
                      (n_patterns, n_features, timer() - t_start))
 
-        self.gmm_fit_iter(data)
+        self.__estimator, self.__n_clusters = self._fit(data, n_clusters=n_clusters)
 
-    def gmm_fit_iter(self, samples):
+    def _fit(self, data, n_clusters=0):
+        return None, n_clusters
+
+    def score(self, data):
+        if len(data[0]) != self.__n_features:
+            raise ValueError('The number of features [%d] in the data is different from that in the model [%d].' %
+                             (len(data[0]), self.__n_features))
+
+        for preprocessor in self.__preprocessors:
+            data = preprocessor.transform(data)
+
+        if len(data[0]) != self._n_features_transformed:
+            raise ValueError(
+                'The number of transformed features [%d] in the data is different from that in the model [%d].' %
+                (len(data[0]), self._n_features_transformed))
+
+        return self._score_transformed_data(data)
+
+    def _score_transformed_data(self, data):
+        return [record[0] for record in data]
+
+
+class GMMModel(Model):
+
+    def __init__(self, min_prob=0.8):
+        Model.__init__(self)
+        self.__min_prob = min_prob
+
+    def _fit(self, samples, n_clusters=None):
         t_start = timer()
         n_clusters = len(samples)
         best_estimator = None
@@ -50,11 +80,11 @@ class GMMModel:
             elif aic <= min_aic:
                 best_estimator, min_aic = estimator, aic
 
-        self.__estimator = best_estimator
-        self.__n_clusters = self.__estimator.n_components
+        n_clusters = best_estimator.n_components
         logging.info('Finally got a GMM model on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
-                     (len(samples), self.__n_features_transformed, self.__n_clusters, timer() - t_start,
-                      self.__estimator.aic(samples)))
+                     (len(samples), self._n_features_transformed, n_clusters, timer() - t_start,
+                      best_estimator.aic(samples)))
+        return best_estimator, n_clusters
 
     def gmm_fit(self, samples, n_clusters):
         t_start = timer()
@@ -68,57 +98,36 @@ class GMMModel:
                       estimator.aic(samples)))
         return estimator
 
-    def score(self, data, min_prob=0.8):
-        if len(data[0]) != self.__n_features:
-            raise ValueError('The number of features [%d] in the data is different from that in the model [%d].' %
-                             (len(data[0]), self.__n_features))
-
-        for preprocessor in self.__preprocessors:
-            data = preprocessor.transform(data)
-
-        if len(data[0]) != self.__n_features_transformed:
-            raise ValueError('The number of transformed features [%d] in the data is different from that in the model [%d].' %
-                             (len(data[0]), self.__n_features_transformed))
-
+    def _score_transformed_data(self, data):
         labels = [None] * len(data)
         probs = self.__estimator.predict_proba(data)
         for i, p in enumerate(probs):
             max_p = np.max(p)
-            if max_p >= min_prob:
+            if max_p >= self.__min_prob:
                 labels[i] = (np.where(p == max_p)[0][0], max_p)
         return labels
 
 
-class KMeansModel:
+class KMeansModel(Model):
 
     def __init__(self):
-        self.__n_features = None
-        self.__estimator = None
+        Model.__init__(self)
 
-    def train(self, samples, n_clusters):
-        n_features = len(samples[0])
-        self.__n_features = n_features
-        self.kmeans_fit(samples, n_clusters)
-
-    def kmeans_fit(self, samples, n_clusters):
+    def _fit(self, samples, n_clusters=2):
         t_start = timer()
         n_features = len(samples[0])
         logging.debug('Running KMeans on %d patterns using %d features for %d clusters ...' %
                       (len(samples), n_features, n_clusters))
-        self.__estimator = KMeans(n_clusters=n_clusters, n_init=1)
-        self.__estimator.fit(samples)
-        # self.__estimator.fit_transform(samples)
-        # self.__estimator.fit_predict(samples)
+        estimator = KMeans(n_clusters=n_clusters, n_init=10)
+        estimator.fit(samples)
+        # estimator.fit_transform(samples)
+        # estimator.fit_predict(samples)
         logging.info('Finished KMeans on %d patterns using %d features for %d clusters. %.3f sec.' %
                      (len(samples), n_features, n_clusters, timer() - t_start))
+        return estimator, n_clusters
 
-    def score(self, samples):
-        if len(samples[0]) != self.__n_features:
-            raise ValueError('The number of features [%d] in the data is different from that in the model [%d].' %
-                             (len(samples[0]), self.__n_features))
-
-        labels = self.__estimator.predict(samples)
-        return labels
+    def _score_transformed_data(self, data):
+        return self.__estimator.predict(data)
 
 
 
