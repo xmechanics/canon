@@ -107,8 +107,8 @@ class KMeansModel:
                       (len(samples), n_features, n_clusters))
         self.__estimator = KMeans(n_clusters=n_clusters, n_init=1)
         self.__estimator.fit(samples)
-        self.__estimator.fit_transform(samples)
-        self.__estimator.fit_predict(samples)
+        # self.__estimator.fit_transform(samples)
+        # self.__estimator.fit_predict(samples)
         logging.info('Finished KMeans on %d patterns using %d features for %d clusters. %.3f sec.' %
                      (len(samples), n_features, n_clusters, timer() - t_start))
 
