@@ -12,7 +12,7 @@ class Model:
         self.__n_features = None
         self.__n_clusters = None
         self.__preprocessors = []
-        self.__estimator = None
+        self._estimator = None
         self._n_features_transformed = None
 
     def train(self, data, preprocessors=None, n_clusters=None):
@@ -33,7 +33,7 @@ class Model:
         logging.info('Finished pre-processing of %d patterns with %d features. %.3f sec' %
                      (n_patterns, n_features, timer() - t_start))
 
-        self.__estimator, self.__n_clusters = self._fit(data, n_clusters=n_clusters)
+        self._estimator, self.__n_clusters = self._fit(data, n_clusters=n_clusters)
 
     def _fit(self, data, n_clusters=0):
         return None, n_clusters
@@ -100,7 +100,7 @@ class GMMModel(Model):
 
     def _score_transformed_data(self, data):
         labels = [None] * len(data)
-        probs = self.__estimator.predict_proba(data)
+        probs = self._estimator.predict_proba(data)
         for i, p in enumerate(probs):
             max_p = np.max(p)
             if max_p >= self.__min_prob:
@@ -127,7 +127,7 @@ class KMeansModel(Model):
         return estimator, n_clusters
 
     def _score_transformed_data(self, data):
-        return self.__estimator.predict(data)
+        return self._estimator.predict(data)
 
 
 

@@ -1,11 +1,13 @@
 import os
 
-blacklist = set(['.DS_Store'])
+blacklist = set(['.DS_Store', '.DS_S'])
 
 
 def read_dats_indir(dir_path):
     filenames = []
     for file in os.listdir(dir_path):
+        if file in blacklist:
+            continue
         filenames.append(os.path.join(dir_path, file))
     return read_dats(filenames), filenames
 

@@ -116,9 +116,13 @@ class CombinedExtractor(FeaturesExtractor):
 
 
 def _peaks_above_threshold(pattern, threshold):
-    imax = max([p[2] for p in pattern])
-    ith = threshold * imax
-    return [(p[0], p[1], p[2]/imax) for p in pattern if p[2] >= ith]
+    intensity = [p[2] for p in pattern]
+    if intensity:
+        imax = max(intensity)
+        ith = threshold * imax
+        return [(p[0], p[1], p[2]/imax) for p in pattern if p[2] >= ith]
+    else:
+        return [(0, 0, 0)]
 
 
 
