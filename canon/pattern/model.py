@@ -15,7 +15,7 @@ class Model:
         self._estimator = None
         self._n_features_transformed = None
 
-    def train(self, data, preprocessors=None, n_clusters=None):
+    def train(self, data, preprocessors=None, n_clusters=None, init=4):
         n_patterns = len(data)
         n_features = len(data[0])
         self.__n_features = n_features
@@ -112,16 +112,23 @@ class KMeansModel(Model):
 
     def __init__(self):
         Model.__init__(self)
+        self._centroids = None
+        # self._inertia = None
 
-    def _fit(self, samples, n_clusters=2):
+    def centroids(self):
+        return self._centroids
+
+    def _fit(self, samples, n_clusters=2, init=4):
         t_start = timer()
         n_features = len(samples[0])
         logging.debug('Running KMeans on %d patterns using %d features for %d clusters ...' %
                       (len(samples), n_features, n_clusters))
-        estimator = KMeans(n_clusters=n_clusters, n_init=10)
+        estimator = KMeans(n_clusters=n_clusters, n_init=init)
         estimator.fit(samples)
         # estimator.fit_transform(samples)
         # estimator.fit_predict(samples)
+        self._centroids = estimator.cluster_centers_
+        # self._inertia = estimator.inertia_
         logging.info('Finished KMeans on %d patterns using %d features for %d clusters. %.3f sec.' %
                      (len(samples), n_features, n_clusters, timer() - t_start))
         return estimator, n_clusters

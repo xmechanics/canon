@@ -102,6 +102,34 @@ class PeaksNumberExtractor(FeaturesExtractor):
         return [float(len(peaks))]
 
 
+class MaxPeaksExtractor(FeaturesExtractor):
+    def __init__(self):
+        FeaturesExtractor.__init__(self)
+
+    def features(self, pattern):
+        peaks = sorted(_peaks_above_threshold(pattern, 0.0), key=lambda p: p[2], reverse=True)
+        max_peak = peaks[0]
+        return [max_peak[0], max_peak[1]]
+
+
+    def __gaussian2d(self, x0, y0, i, height=1, width=5):
+        sigma = width
+        A = i * height
+
+        def gx(X):
+            X0 = np.ones(X.shape, dtype='f') * x0
+            return (X -X0) * (X - X0) / (2 * sigma ** 2)
+
+        def gy(Y):
+            Y0 = np.ones(Y.shape, dtype='f') * y0
+            return (Y -Y0) * (Y - Y0) / (2 * sigma ** 2)
+
+        def g(X, Y):
+            return A * np.exp(-(gx(X) + gy(Y)))
+
+        return g
+
+
 class CombinedExtractor(FeaturesExtractor):
 
     def __init__(self, extractors):
@@ -116,13 +144,10 @@ class CombinedExtractor(FeaturesExtractor):
 
 
 def _peaks_above_threshold(pattern, threshold):
-    intensity = [p[2] for p in pattern]
-    if intensity:
-        imax = max(intensity)
-        ith = threshold * imax
-        return [(p[0], p[1], p[2]/imax) for p in pattern if p[2] >= ith]
-    else:
-        return [(0, 0, 0)]
+    imax = max([p[2] for p in pattern])
+    ith = threshold * imax
+    return [(p[0], p[1], p[2]/imax) for p in pattern if p[2] >= ith]
+
 
 
 
