@@ -182,18 +182,18 @@ def relabel_score_groups(labeler, groups):
 
 if __name__ == '__main__':
     # Au30
-    read_file = read_txt
-    case_name = 'au30_area2_2k'
+    read_file = read_dats
+    case_name = 'au31_area'
     scratch = "/Users/sherrychen/scratch/"
-    dir_path = scratch + "peaks/txt/" + case_name
-    seq_files = [scratch + "seqfiles/" + f for f in ('au30_a1_.SEQ', 'au30_m1_.SEQ')] # 'm4fine_a.SEQ',
+    dir_path = scratch + "peaks/dat/" + case_name
+    seq_files = [scratch + "seqfiles/" + f for f in ('au31_refined_a_.SEQ', 'au31_refined_.SEQ')] # 'm4fine_a.SEQ',
     all_peaks_threshold = 0.8
     # if MPI_RANK == 0:
     #     labeler = SeqLabeler(seq_files)
-    NX = 100
-    NY = 20
-    step = (2, 2)
-    sample_patterns = read_sample_patterns(dir_path, NX, (1, 1))    # sample_patterns on lives on core-0
+    NX = 20
+    NY = 100
+    step = (5, 5)
+    sample_patterns = read_sample_patterns(dir_path, NX, (2, 2))    # sample_patterns on lives on core-0
 
     # # quartz
     # case_name = 'quartz_500mpa'
@@ -244,8 +244,8 @@ if __name__ == '__main__':
                 if ix < NY:
                     Z[ix, iy] = score
         logging.debug('Z matrix has %d nans' % sum(1 for row in Z for z in row if np.isnan(z)))
-        np.savetxt('Z.txt', Z)
-        logging.info('Write Z matrix into Z.txt in ' + os.path.dirname(os.path.abspath(__file__)))
+        np.savetxt('Z_au31.txt', Z)
+        logging.info('Write Z matrix into Z_au31.txt in ' + os.path.dirname(os.path.abspath(__file__)))
 
         from plotseq import plot_seq
         # # Z = np.loadtxt('Z.txt')

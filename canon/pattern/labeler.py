@@ -8,7 +8,7 @@ class SeqLabeler:
         Z_merged, N_merged = None, None
         readers = map(SeqReader, seqfiles)
         for reader in readers:
-            Z, _, N = reader.get_Zmap('orsnr___')
+            Z, _, N = reader.get_Zmap('orsnr___', thres=10)
             if Z_merged is None:
                 Z_merged, N_merged = Z, N
             else:
@@ -22,7 +22,7 @@ class SeqLabeler:
         if ix >= self.__NX or iy >= self.__NY:
             return None
         z = self.__Z[iy, ix]
-        return z if z != 0 else None
+        return z if z != 0.0 else None
 
     def idx2XY(self, idx):
         return int((idx - 1) / self.__NX), (idx - 1) % self.__NX
