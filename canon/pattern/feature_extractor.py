@@ -28,7 +28,7 @@ class AllPeaksExtractor(FeaturesExtractor):
     def features(self, pattern):
         peaks = _peaks_above_threshold(pattern, self.__threshold)
         gaussians = [AllPeaksExtractor.__gaussian2d(p[0], p[1], 1.0 * p[2], self.__height, self.__width)
-                     for p in peaks]
+                 for p in peaks]
 
         def intensity(X, Y):
             sum = np.zeros_like(X, dtype='f')
@@ -144,9 +144,12 @@ class CombinedExtractor(FeaturesExtractor):
 
 
 def _peaks_above_threshold(pattern, threshold):
-    imax = max([p[2] for p in pattern])
-    ith = threshold * imax
-    return [(p[0], p[1], p[2]/imax) for p in pattern if p[2] >= ith]
+    if len(pattern) > 0:
+        imax = max([p[2] for p in pattern])
+        ith = threshold * imax
+        return [(p[0], p[1], p[2]/imax) for p in pattern if p[2] >= ith]
+    else:
+        return [[0.0, 0.0, 0.0]]
 
 
 
