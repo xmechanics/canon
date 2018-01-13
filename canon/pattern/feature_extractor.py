@@ -111,7 +111,6 @@ class MaxPeaksExtractor(FeaturesExtractor):
         max_peak = peaks[0]
         return [max_peak[0], max_peak[1]]
 
-
     def __gaussian2d(self, x0, y0, i, height=1, width=5):
         sigma = width
         A = i * height
