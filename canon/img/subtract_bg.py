@@ -1,4 +1,4 @@
-from ..__imports import *
+from canon.__imports import *
 from skimage import exposure
 
 

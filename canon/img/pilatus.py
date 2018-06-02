@@ -2,7 +2,7 @@
 This module handles tiff images captured by Pilatus CCD
 """
 
-from ..__imports import *
+from canon.__imports import *
 
 
 # noinspection PyMethodMayBeStatic,PyClassHasNoInit
@@ -13,7 +13,7 @@ class Pilatus:
         """
         param `image` will be modified
         """
-        gap_centers = (202 + 212 * i for i in xrange(4))
+        gap_centers = (202 + 212 * i for i in range(4))
         map(lambda c: Pilatus.__fill_horizontal_stripe(image, c), gap_centers)
         Pilatus.__fill_middle_stripe(image)
 
@@ -31,7 +31,7 @@ class Pilatus:
         intersect = image[top, :] - slope * top
 
         # TODO:song - there must be a way to vectorize this step
-        for x in xrange(bottom, top + 1):
+        for x in range(bottom, top + 1):
             image[x, :] = slope * (x - 1) + intersect
 
     @staticmethod
@@ -50,7 +50,7 @@ class Pilatus:
         intersect = image[:, right] - slope * right
 
         # TODO:song - there must be a way to vectorize this step
-        for y in xrange(left, right + 1):
+        for y in range(left, right + 1):
             image[:, y] = slope * (y - 1) + intersect
 
     @staticmethod

@@ -3,7 +3,7 @@ def idx2XY(idx, NX):
 
 
 def split_workload(loads, nproc):
-    load_groups = [[] for _ in xrange(nproc)]
+    load_groups = [[] for _ in range(nproc)]
     for i, l in enumerate(loads):
         load_groups[i % len(load_groups)].append(l)
     return load_groups
@@ -12,6 +12,6 @@ def split_workload(loads, nproc):
 def merge_workload(grps):
     merged = []
     tot_len = sum(map(len, grps))
-    for i in xrange(tot_len):
+    for i in range(tot_len):
         merged.append(grps[i % len(grps)][i / len(grps)])
     return merged

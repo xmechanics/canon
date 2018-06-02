@@ -1,8 +1,12 @@
+import logging
+import numpy as np
 from timeit import default_timer as timer
+
 from canon.mpi.init import *
 from canon.util import split_workload, merge_workload
 from canon.dat.datreader import read_dats
-import numpy as np
+
+_logger = logging.getLogger(__name__)
 
 
 def distribute_mpi(works_global):
@@ -24,32 +28,32 @@ def gather_mpi(works_local):
 def read_patterns(filenames, read_file_func=read_dats):
     t0 = timer()
     if MPI_RANK == 0:
-        logging.debug('Got %d files to read patterns.' % len(filenames))
+        _logger.debug('Got %d files to read patterns.' % len(filenames))
     files_in_group = distribute_mpi(filenames)
-    logging.debug('Assigned %d [local] files to read patterns.' % len(files_in_group))
+    _logger.debug('Assigned %d [local] files to read patterns.' % len(files_in_group))
 
     t0_loc = timer()
     patterns = read_file_func(files_in_group)
-    logging.debug('Got %d [local] sample patterns. %g sec' % (len(patterns), timer() - t0_loc))
+    _logger.debug('Got %d [local] sample patterns. %g sec' % (len(patterns), timer() - t0_loc))
 
     patterns = gather_mpi(patterns)
     if MPI_RANK == 0:
-        logging.info('Gathered %d sample patterns in total. %g sec' % (len(patterns), timer() - t0))
+        _logger.info('Gathered %d sample patterns in total. %g sec' % (len(patterns), timer() - t0))
         return patterns
 
 
 def extract_features(extractor, sample_patterns):
     extractor = MPI_COMM.bcast(extractor, root=0)
     patterns_loc = distribute_mpi(sample_patterns)
-    logging.debug('Assigned %d [local] patterns to extract features' % len(patterns_loc))
+    _logger.debug('Assigned %d [local] patterns to extract features' % len(patterns_loc))
 
     t0_loc = timer()
     data_loc = map(extractor.features, patterns_loc)
-    logging.debug('Extracted %d features x %d [local] patterns. %g sec' %
+    _logger.debug('Extracted %d features x %d [local] patterns. %g sec' %
                   (len(data_loc[0]), len(patterns_loc), timer() - t0_loc))
     data = np.array(gather_mpi(data_loc))
     if MPI_RANK == 0:
-        logging.info('Extracted %d features x %d patterns. %g sec' %
+        _logger.info('Extracted %d features x %d patterns. %g sec' %
                      (len(data[0]), len(sample_patterns), timer() - t0_loc))
     return data
 

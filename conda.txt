@@ -1,0 +1,14 @@
+h5py
+mpi4py
+matplotlib
+Pillow
+numpy
+scipy
+pandas
+scikit-image
+scikit-learn
+tensorflow
+Keras
+
+yaml
+jupyter

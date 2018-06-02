@@ -38,7 +38,7 @@ setup(name='Canon',
           'Intended Audience :: Science/Research',
           'License :: Freeware',
           'Natural Language :: English',
-          'Programming Language :: Python :: 2',
+          'Programming Language :: Python :: 3',
           'Programming Language :: Python :: Implementation :: CPython'
       ),
       packages=('canon', 'canon.dat', 'canon.img', 'canon.mpi', 'canon.pattern', 'canon.seq', 'canon.util'),
