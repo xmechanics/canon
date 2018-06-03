@@ -1,7 +1,7 @@
 import numpy as np
 import logging
 from timeit import default_timer as timer
-from sklearn.mixture import GMM
+from sklearn.mixture import GaussianMixture
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
@@ -57,7 +57,7 @@ class Model:
         return [record[0] for record in data]
 
 
-class GMMModel(Model):
+class GMModel(Model):
 
     def __init__(self, min_prob=0.8):
         Model.__init__(self)
@@ -70,7 +70,7 @@ class GMMModel(Model):
         min_aic = None
 
         while n_clusters >= 16:
-            n_clusters /= 2
+            n_clusters = n_clusters // 2
             estimator = self.gmm_fit(samples, n_clusters)
             aic = estimator.aic(samples)
             if min_aic is None:
@@ -91,7 +91,7 @@ class GMMModel(Model):
         n_features = len(samples[0])
         logging.debug('Running GMM on %d patterns using %d features for %d clusters ...' %
                       (len(samples), n_features, n_clusters))
-        estimator = GMM(n_components=n_clusters)
+        estimator = GaussianMixture(n_components=n_clusters)
         estimator.fit(samples)
         logging.info('Finished GMM on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
                      (len(samples), n_features, n_clusters, timer() - t_start,

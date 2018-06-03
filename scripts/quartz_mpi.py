@@ -11,7 +11,7 @@ from sklearn.preprocessing import StandardScaler
 
 from canon.dat.datreader import read_dats, read_txt, idx2XY, blacklist
 from canon.pattern.feature_extractor import AllPeaksExtractor, PeaksNumberExtractor, CombinedExtractor
-from canon.pattern.model import GMMModel
+from canon.pattern.model import GMModel
 from canon.pattern.labeler import SeqLabeler
 
 
@@ -219,7 +219,7 @@ if __name__ == '__main__':
     extractor = MPI_COMM.bcast(extractor, root=0)
 
     if MPI_RANK == 0:
-        model = GMMModel()
+        model = GMModel()
         model.train(np.array(data), preprocessors=[StandardScaler()])
         # model.train(np.array(data), preprocessors=[StandardScaler(), PCA(whiten=True)])
     else:
