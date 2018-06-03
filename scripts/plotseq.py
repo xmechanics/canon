@@ -30,7 +30,7 @@ def plot_seq(Z, step, colormap='gist_ncar', filename='untitled'):
 def plot_contourf(Z, step, colormap='gist_ncar', filename='untitled'):
     dir = os.path.dirname(os.path.abspath(__file__))
     save_directory = os.path.join(dir, 'img/{:s}.png'.format(filename))
-    X, Y = np.meshgrid(xrange(len(Z[0, :])), xrange(len(Z[:, 0])))
+    X, Y = np.meshgrid(range(len(Z[0, :])), range(len(Z[:, 0])))
 
     x_step = step[0]
     y_step = step[1]

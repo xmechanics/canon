@@ -25,7 +25,7 @@ class LatentExtractor(FeaturesExtractor):
         self._set_n_features(int(np.prod(self.__encoder.layers[-1].output_shape[1:])))
         _logger.info("Loaded an encoder with %d features" % (self.n_features()))
 
-    def features(self, tiff_files, skip_normalize=False):
+    def features(self, tiff_files, skip_normalize=True):
         reader = TiffReader('pilatus')
         imgs = []
         for tiff in tiff_files:
@@ -40,8 +40,8 @@ class LatentExtractor(FeaturesExtractor):
                 img = imread(tiff).astype("float32")
             img = img / 255.
             imgs.append(img)
-            if len(imgs) % 10 == 0:
-                _logger.info("Normalized %d tiff files" % len(imgs))
+            # if len(imgs) % 100 == 0:
+            #     _logger.info("Normalized %d tiff files" % len(imgs))
         imgs = np.array(imgs)
         return self.__encoder.predict(imgs)
 

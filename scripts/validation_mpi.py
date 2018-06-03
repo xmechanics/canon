@@ -16,10 +16,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 _logger = logging.getLogger(__name__)
 
 from canon.pattern.latent_extractor import LatentExtractor
-from canon.dat.datreader import read_dats, read_txt, idx2XY, blacklist
-from canon.pattern.feature_extractor import AllPeaksExtractor, PeaksNumberExtractor, CombinedExtractor
-from canon.pattern.model import GMModel
+from canon.dat.datreader import read_dats, idx2XY, blacklist
+from canon.pattern.model import GMModel, KMeansModel
 from canon.pattern.labeler import SeqLabeler
+
+from plotseq import plot_seq
 
 
 read_file = read_dats
@@ -193,22 +194,21 @@ if __name__ == '__main__':
     init_mpi_logging("logging_mpi.yaml")
 
     # CuAlNi_mart2
-    read_file = read_dats
-    case_name = 'CuAlNi_mart2'
     # scratch = "/Users/sherrychen/scratch/"
     scratch = "."
     z_file = "Z.txt"
+    z_plot = "Z"
+    tiff_dir = os.path.join(scratch, "img", "CuAlNi_mart2_processed")
+    seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
 
-    tiff_dir = os.path.join(scratch, "img", case_name)
-    seq_files = [os.path.join(scratch, "seq", case_name + "_.SEQ")]
-    NX = 20
+    NX = 40
     NY = 100
     step = (5, 5)
-    training_set = read_sample_tiffs(tiff_dir, NX, (4, 4))    # sample_patterns on lives on core-0
+    training_set = read_sample_tiffs(tiff_dir, NX, (2, 2))    # sample_patterns on lives on core-0
 
     if MPI_RANK == 0:
         model = GMModel()
-        model.train(np.array(training_set), preprocessors=[StandardScaler(), PCA(whiten=True)])
+        model.train(np.array(training_set), n_clusters=6, preprocessors=[StandardScaler(), PCA(whiten=True)])
     else:
         model = None
     model = MPI_COMM.bcast(model, root=0)
@@ -236,8 +236,7 @@ if __name__ == '__main__':
 
     # Visualization
     if MPI_RANK == 0:
-        from .plotseq import plot_seq
         Z = np.loadtxt(z_file)
-        plot_seq(Z, step, colormap='jet', filename=scratch + "img/clustering_" + case_name)
+        plot_seq(Z, step, colormap='jet', filename=os.path.join(scratch, "img", z_plot))
 
 

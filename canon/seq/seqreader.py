@@ -46,8 +46,8 @@ class SeqReader:
         # print("Y_min = {:f}, Y_max = {:f}".format(min(y_list), max(y_list)))
         NX = len(x_list)
         NY = len(y_list)
-        x_map = dict(zip(x_list, xrange(NX)))
-        y_map = dict(zip(y_list, xrange(NY)))
+        x_map = dict(zip(x_list, range(NX)))
+        y_map = dict(zip(y_list, range(NY)))
         Z_init = np.zeros((NY, NX))
         N_init = np.zeros((NY, NX))
         Z = Z_init
@@ -76,8 +76,8 @@ class SeqReader:
         N = np.zeros((NY, NX))
         Z = (-1.5) * np.ones((NY, NX))
 
-        for ix in xrange(NX):
-            for iy in xrange(NY):
+        for ix in range(NX):
+            for iy in range(NY):
                 if n1[iy, ix] >= n2[iy, ix]:
                     Z[iy, ix] = z1[iy, ix]
                     N[iy, ix] = n1[iy, ix]

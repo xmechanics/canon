@@ -5,6 +5,8 @@ from sklearn.mixture import GaussianMixture
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
+_logger = logging.getLogger(__name__)
+
 
 class Model:
 
@@ -15,13 +17,13 @@ class Model:
         self._estimator = None
         self._n_features_transformed = None
 
-    def train(self, data, preprocessors=None, n_clusters=None, init=4):
+    def train(self, data, preprocessors=None, n_clusters=None):
         n_patterns = len(data)
         n_features = len(data[0])
         self.__n_features = n_features
 
         t_start = timer()
-        logging.debug('Pre-processing %d patterns with %d features ...' % (n_patterns, n_features))
+        _logger.info('Pre-processing %d patterns with %d features ...' % (n_patterns, n_features))
         if preprocessors is None:
             preprocessors = [StandardScaler()]
         for preprocessor in preprocessors:
@@ -30,7 +32,7 @@ class Model:
 
         n_features = len(data[0])
         self._n_features_transformed = n_features
-        logging.info('Finished pre-processing of %d patterns with %d features. %.3f sec' %
+        _logger.info('Finished pre-processing of %d patterns with %d features. %.3f sec' %
                      (n_patterns, n_features, timer() - t_start))
 
         self._estimator, self.__n_clusters = self._fit(data, n_clusters=n_clusters)
@@ -65,12 +67,14 @@ class GMModel(Model):
 
     def _fit(self, samples, n_clusters=None):
         t_start = timer()
-        n_clusters = len(samples)
+        if n_clusters is None:
+            n_clusters = len(samples)
         best_estimator = None
         min_aic = None
 
-        while n_clusters >= 16:
-            n_clusters = n_clusters // 2
+        while best_estimator is None or n_clusters >= 16:
+            if best_estimator is not None:
+                n_clusters = n_clusters // 2
             estimator = self.gmm_fit(samples, n_clusters)
             aic = estimator.aic(samples)
             if min_aic is None:
@@ -81,7 +85,7 @@ class GMModel(Model):
                 best_estimator, min_aic = estimator, aic
 
         n_clusters = best_estimator.n_components
-        logging.info('Finally got a GMM model on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
+        _logger.info('Finally got a GMM model on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
                      (len(samples), self._n_features_transformed, n_clusters, timer() - t_start,
                       best_estimator.aic(samples)))
         return best_estimator, n_clusters
@@ -89,11 +93,11 @@ class GMModel(Model):
     def gmm_fit(self, samples, n_clusters):
         t_start = timer()
         n_features = len(samples[0])
-        logging.debug('Running GMM on %d patterns using %d features for %d clusters ...' %
+        _logger.info('Running GMM on %d patterns using %d features for %d clusters ...' %
                       (len(samples), n_features, n_clusters))
         estimator = GaussianMixture(n_components=n_clusters)
         estimator.fit(samples)
-        logging.info('Finished GMM on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
+        _logger.info('Finished GMM on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
                      (len(samples), n_features, n_clusters, timer() - t_start,
                       estimator.aic(samples)))
         return estimator
@@ -104,7 +108,7 @@ class GMModel(Model):
         for i, p in enumerate(probs):
             max_p = np.max(p)
             if max_p >= self.__min_prob:
-                labels[i] = (np.where(p == max_p)[0][0], max_p)
+                labels[i] = (np.argmax(p), max_p)
         return labels
 
 
@@ -121,7 +125,7 @@ class KMeansModel(Model):
     def _fit(self, samples, n_clusters=2, init=4):
         t_start = timer()
         n_features = len(samples[0])
-        logging.debug('Running KMeans on %d patterns using %d features for %d clusters ...' %
+        _logger.info('Running KMeans on %d patterns using %d features for %d clusters ...' %
                       (len(samples), n_features, n_clusters))
         estimator = KMeans(n_clusters=n_clusters, n_init=init)
         estimator.fit(samples)
@@ -129,7 +133,7 @@ class KMeansModel(Model):
         # estimator.fit_predict(samples)
         self._centroids = estimator.cluster_centers_
         # self._inertia = estimator.inertia_
-        logging.info('Finished KMeans on %d patterns using %d features for %d clusters. %.3f sec.' %
+        _logger.info('Finished KMeans on %d patterns using %d features for %d clusters. %.3f sec.' %
                      (len(samples), n_features, n_clusters, timer() - t_start))
         return estimator, n_clusters
 
