@@ -69,15 +69,13 @@ if __name__ == '__main__':
     init_mpi_logging("logging_mpi.yaml")
 
     file_names = []
-    # if MPI_RANK == 0:
-    #     for d in os.listdir("/Volumes/G-DRIVE"):
-    #         if d != "CuAlMn_Dec2017" and d != "xmas_clusters" and d != "System Volume Information" \
-    #                 and d[0] != '.' and d[0] != "$" and d[-4:] != ".cal":
-    #             file_names += get_file_names("/Volumes/G-DRIVE/" + d)
-    #     for d in os.listdir("/Volumes/G-DRIVE/CuAlMn_Dec2017"):
-    #         file_names += get_file_names("/Volumes/G-DRIVE/CuAlMn_Dec2017/" + d)
-    #     _logger.info("Collected %d files" % len(file_names))
-
     if MPI_RANK == 0:
-        file_names = get_file_names("img/CuAlNi_mart2")
-    process_images(file_names, "img/CuAlNi_mart2_processed")
+        for d in os.listdir("/Volumes/G-DRIVE/xmax_tiff"):
+            if d != "CuAlMn_Dec2017" and d[0] != '.' and d[0] != "$" and d[-4:] != ".cal":
+                file_names += get_file_names("/Volumes/G-DRIVE/xmax_tiff" + d, samples=200)
+        for d in os.listdir("/Volumes/G-DRIVE/xmax_tiff/CuAlMn_Dec2017"):
+            file_names += get_file_names("/Volumes/G-DRIVE/xmax_tiff/CuAlMn_Dec2017" + d, samples=200)
+        _logger.info("Collected %d files" % len(file_names))
+    # if MPI_RANK == 0:
+    #     file_names = get_file_names("/Volumes/G-DRIVE/xmax_tiff/CuAlMn_Dec2017/C_2_1_test")
+    process_images(file_names, "img/processed")

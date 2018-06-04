@@ -136,9 +136,13 @@ class CombinedExtractor(FeaturesExtractor):
         self.__extractors = extractors
 
     def features(self, pattern):
-        fts = []
+        fts = None
         for extractor in self.__extractors:
-            fts += extractor.features(pattern)
+            new_fts = extractor.features(pattern)
+            if fts is None:
+                fts = new_fts
+            else:
+                fts = np.append(fts, new_fts, axis=1)
         return fts
 
 

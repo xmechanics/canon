@@ -1,8 +1,8 @@
 import numpy as np
 import logging
 from timeit import default_timer as timer
-from sklearn.mixture import GaussianMixture
-from sklearn.cluster import KMeans
+from sklearn.mixture import GaussianMixture, BayesianGaussianMixture
+from sklearn.cluster import KMeans, DBSCAN
 from sklearn.preprocessing import StandardScaler
 
 _logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class GMModel(Model):
     def _fit(self, samples, n_clusters=None):
         t_start = timer()
         if n_clusters is None:
-            n_clusters = len(samples)
+            n_clusters = min(len(samples), 256)
         best_estimator = None
         min_aic = None
 
@@ -85,7 +85,7 @@ class GMModel(Model):
                 best_estimator, min_aic = estimator, aic
 
         n_clusters = best_estimator.n_components
-        _logger.info('Finally got a GMM model on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
+        _logger.info('Finally got a GM model on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
                      (len(samples), self._n_features_transformed, n_clusters, timer() - t_start,
                       best_estimator.aic(samples)))
         return best_estimator, n_clusters
@@ -93,11 +93,11 @@ class GMModel(Model):
     def gmm_fit(self, samples, n_clusters):
         t_start = timer()
         n_features = len(samples[0])
-        _logger.info('Running GMM on %d patterns using %d features for %d clusters ...' %
+        _logger.info('Running GaussianMixture on %d patterns using %d features for %d clusters ...' %
                       (len(samples), n_features, n_clusters))
         estimator = GaussianMixture(n_components=n_clusters)
         estimator.fit(samples)
-        _logger.info('Finished GMM on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
+        _logger.info('Finished GaussianMixture on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
                      (len(samples), n_features, n_clusters, timer() - t_start,
                       estimator.aic(samples)))
         return estimator
@@ -124,8 +124,8 @@ class KMeansModel(Model):
 
     def _fit(self, samples, n_clusters=2, init=4):
         t_start = timer()
-        n_features = len(samples[0])
-        _logger.info('Running KMeans on %d patterns using %d features for %d clusters ...' %
+        self.__n_features = len(samples[0])
+        _logger.info('Running KMeans on %d samples using %d features for %d clusters ...' %
                       (len(samples), n_features, n_clusters))
         estimator = KMeans(n_clusters=n_clusters, n_init=init)
         estimator.fit(samples)
@@ -133,7 +133,7 @@ class KMeansModel(Model):
         # estimator.fit_predict(samples)
         self._centroids = estimator.cluster_centers_
         # self._inertia = estimator.inertia_
-        _logger.info('Finished KMeans on %d patterns using %d features for %d clusters. %.3f sec.' %
+        _logger.info('Finished KMeans on %d samples using %d features for %d clusters. %.3f sec.' %
                      (len(samples), n_features, n_clusters, timer() - t_start))
         return estimator, n_clusters
 
@@ -141,6 +141,83 @@ class KMeansModel(Model):
         return self._estimator.predict(data)
 
 
+class BGMModel(Model):
+    def __init__(self, min_prob=0.8):
+        Model.__init__(self)
+        self.__min_prob = min_prob
+
+    def _fit(self, samples, n_clusters=None):
+        t_start = timer()
+        self._n_features = len(samples[0])
+        if n_clusters is None:
+            n_clusters = min(len(samples), 256)
+        estimator = self.bgmm_fit(samples, n_clusters)
+        cover_clusters = self.coveraging_clusters(estimator.weights_)
+        while estimator.n_components > 16 and cover_clusters < 0.8 * estimator.n_components:
+            estimator = self.bgmm_fit(samples, int(0.8 * estimator.n_components))
+            cover_clusters = self.coveraging_clusters(estimator.weights_)
+        n_clusters = estimator.n_components
+        _logger.info('Finally got a BGM model on %d samples using %d features for %d clusters. %.3f sec' %
+                     (len(samples), self._n_features_transformed, n_clusters, timer() - t_start))
+        return estimator, n_clusters
+
+    def bgmm_fit(self, samples, n_clusters):
+        t_start = timer()
+        n_features = len(samples[0])
+        _logger.info('Running BayesianGaussianMixture on %d samples using %d features for %d clusters ...' %
+                      (len(samples), n_features, n_clusters))
+        estimator = BayesianGaussianMixture(n_components=n_clusters, covariance_type='full')
+        estimator.fit(samples)
+        _logger.info('Finished GaussianMixture on %d samples using %d features for %d clusters. %.3f sec.'
+                     % (len(samples), n_features, n_clusters, timer() - t_start))
+        return estimator
+
+    def coveraging_clusters(self, weights):
+        ws = np.flip(np.sort(weights), axis=0)
+        w_cum = 0
+        i = len(ws) - 1
+        for i, w in enumerate(ws):
+            w_cum += w
+            if w_cum >= max(0.99, 1. - 1./self._n_features):
+                break
+        return i + 1
+
+    def _score_transformed_data(self, data):
+        labels = [None] * len(data)
+        probs = self._estimator.predict_proba(data)
+        for i, p in enumerate(probs):
+            max_p = np.max(p)
+            if max_p >= self.__min_prob:
+                labels[i] = (np.argmax(p), max_p)
+        return labels
 
 
+class DBSCANModel(Model):
 
+    def __init__(self, eps=None, min_samples=None):
+        Model.__init__(self)
+        self._eps = eps
+        self._min_samples = min_samples
+
+    def centroid_indices(self):
+        return self._estimator.core_sample_indices_
+
+    def _fit(self, samples, n_clusters=None):
+        t_start = timer()
+        n_features = len(samples[0])
+        if self._eps is None:
+            self._eps = np.sqrt(n_features * 0.5)
+        if self._min_samples is None:
+            self._min_samples = max(10, int(len(samples)/ 100))
+        _logger.info('Running DBSCAN %d samples using %d features for eps=%g and min_samples=%d ...' %
+                      (len(samples), n_features, self._eps, self._min_samples))
+        estimator = DBSCAN(eps=self._eps, min_samples=self._min_samples)
+        estimator.fit(samples)
+        n_clusters = len(set(estimator.labels_)) - (1 if -1 in estimator.labels_ else 0)
+        _logger.info('Contains %d unclassified samples' % len(np.where(estimator.labels_ == -1)[0]))
+        _logger.info('Finished DBSCAN on %d samples using %d features for %d clusters. %.3f sec.' %
+                     (len(samples), n_features, n_clusters, timer() - t_start))
+        return estimator, n_clusters
+
+    def _score_transformed_data(self, data):
+        return self._estimator.fit_predict(data)

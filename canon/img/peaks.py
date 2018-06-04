@@ -14,3 +14,8 @@ def find_peaks(img, npeaks=float('inf')):
         peaks = peak_local_max(img, threshold_rel=threshold(log_th))
 
     return peaks
+
+
+def num_peaks(img):
+    peaks = find_peaks(img)
+    return len(peaks)
