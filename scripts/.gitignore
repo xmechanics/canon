@@ -2,4 +2,6 @@ Z.txt
 img/
 seq/
 checkpoints/
+models/
+logs/
 *.log

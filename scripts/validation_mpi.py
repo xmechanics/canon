@@ -113,7 +113,6 @@ if __name__ == '__main__':
     score_inds = score_dir(extractor, model, tiff_dir, limit=None, batch_size=200)
 
     # only support relabeling Guassian Mixture based model for now
-
     # if MPI_RANK == 0:
     #     labeler = SeqLabeler(seq_files)
     # else:

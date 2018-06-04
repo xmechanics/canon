@@ -154,7 +154,10 @@ class BGMModel(Model):
         estimator = self.bgmm_fit(samples, n_clusters)
         cover_clusters = self.coveraging_clusters(estimator.weights_)
         while estimator.n_components > 16 and cover_clusters < 0.8 * estimator.n_components:
-            estimator = self.bgmm_fit(samples, int(0.8 * estimator.n_components))
+            new_estimator = self.bgmm_fit(samples, int(0.8 * estimator.n_components))
+            if np.max(new_estimator.weights_) > 0.7:
+                break
+            estimator = new_estimator
             cover_clusters = self.coveraging_clusters(estimator.weights_)
         n_clusters = estimator.n_components
         _logger.info('Finally got a BGM model on %d samples using %d features for %d clusters. %.3f sec' %
@@ -178,7 +181,7 @@ class BGMModel(Model):
         i = len(ws) - 1
         for i, w in enumerate(ws):
             w_cum += w
-            if w_cum >= max(0.99, 1. - 1./self._n_features):
+            if w_cum >= 0.95:
                 break
         return i + 1
 

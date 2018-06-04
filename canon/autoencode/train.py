@@ -1,3 +1,4 @@
+import os
 import time
 import keras
 from keras.callbacks import TensorBoard
@@ -20,24 +21,41 @@ class ModelSaveCallback(keras.callbacks.Callback):
 def train(model_name, feed_dir, epochs=10000, initial_epoch=0, checkpoint=None):
     if checkpoint is not None:
         autoencoder = keras.models.load_model(checkpoint)
+        encoder = autoencoder.layers[1]
+        decoder = autoencoder.layers[2]
     else:
         encoder, decoder = build(model_name)
         autoencoder = compile_autoencoder(encoder, decoder)
 
-    feeder = ImageDataFeeder(batch_size=30, test_size=100, img_dir=feed_dir)
+    feeder = ImageDataFeeder(batch_size=30, test_size=500, img_dir=feed_dir)
     X_test = feeder.get_test_set()
     X_train = feeder.get_training_set()
-    autoencoder.fit(X_train, X_train,
-                    epochs=epochs,
-                    shuffle=True,
-                    validation_data=[X_test, X_test],
-                    callbacks=[
-                        TensorBoard(log_dir="logs/{}".format(time.time())),
-                        ModelSaveCallback(("checkpoints/{}/{}/".format(model_name, checkpoint))
-                                          + "autoencoder.{0:03d}.hdf5")
-                    ],
-                    verbose=1,
-                    initial_epoch=initial_epoch)
+    run_number = time.time()
+    checkpoint_dir = "checkpoints/{}/{}".format(model_name, run_number)
+    model_dir = "models/{}/{}".format(model_name, run_number)
+    os.makedirs(checkpoint_dir)
+    os.makedirs(model_dir)
+    try:
+        autoencoder.fit(X_train, X_train,
+                        epochs=epochs,
+                        shuffle=True,
+                        validation_data=[X_test, X_test],
+                        callbacks=[
+                            TensorBoard(log_dir="logs/{}".format(run_number)),
+                            ModelSaveCallback(checkpoint_dir + "/autoencoder.{0:03d}.hdf5")
+                        ],
+                        verbose=1,
+                        initial_epoch=initial_epoch)
+    except KeyboardInterrupt:
+        pass
+
+    # save trained weights
+    with open(os.path.join(model_dir, "encoder.json"), "w") as json_file:
+        json_file.write(encoder.to_json())
+    with open(os.path.join(model_dir, "decoder.json"), "w") as json_file:
+        json_file.write(decoder.to_json())
+    encoder.save_weights(os.path.join(model_dir, "encoder.h5"))
+    decoder.save_weights(os.path.join(model_dir, "decoder.h5"))
 
     #     autoencoder.fit_generator(feeder, epochs=20,
     #                     validation_data=[X_test, X_test],

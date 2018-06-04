@@ -20,7 +20,7 @@ class ImageDataFeeder(Sequence):
         self.train_files = self.file_names[test_size:]
         _logger.info("Initialized a WhiteSequence of %d images" % (len(self.file_names)))
 
-        self.epoch_size = min(int(np.ceil(len(self.train_files) / float(self.batch_size))), ImageDataFeeder.EPOCH_SIZE)
+        self.epoch_size = int(np.ceil(len(self.train_files) / float(self.batch_size)))
 
         # self.__generate_epoch()
 
