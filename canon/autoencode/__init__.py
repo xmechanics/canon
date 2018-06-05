@@ -1,7 +1,7 @@
 import tensorflow as tf
 import keras.backend as K
 
-from .models import AE_128_to_256
+from .models import AE_128_to_256, AE_128_to_64
 
 # !!! remember to clear session/graph if you rebuild your graph to avoid out-of-memory errors !!!
 def reset_tf_session():
