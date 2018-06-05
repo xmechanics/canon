@@ -2,6 +2,7 @@ import os
 from keras.models import model_from_json
 
 AE_128_to_256 = "AE_128_to_256"
+AE_128_to_64 = "AE_128_to_64"
 
 
 def load_encoder(model_name: str):

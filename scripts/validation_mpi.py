@@ -79,7 +79,7 @@ if __name__ == '__main__':
     extractor1 = PeakNumberExtractor()
     extractor2 = LatentExtractor(AE_128_to_256)
     extractor = CombinedExtractor([extractor1, extractor2])
-    extractor = extractor2
+    # extractor = extractor2
 
     # CuAlNi_mart2
     # scratch = "/Users/sherrychen/scratch/"
