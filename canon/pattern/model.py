@@ -2,7 +2,7 @@ import numpy as np
 import logging
 from timeit import default_timer as timer
 from sklearn.mixture import GaussianMixture, BayesianGaussianMixture
-from sklearn.cluster import KMeans, DBSCAN
+from sklearn.cluster import KMeans, DBSCAN, MeanShift
 from sklearn.preprocessing import StandardScaler
 
 _logger = logging.getLogger(__name__)
@@ -125,6 +125,7 @@ class KMeansModel(Model):
     def _fit(self, samples, n_clusters=2, init=4):
         t_start = timer()
         self.__n_features = len(samples[0])
+        n_features = self.__n_features
         _logger.info('Running KMeans on %d samples using %d features for %d clusters ...' %
                       (len(samples), n_features, n_clusters))
         estimator = KMeans(n_clusters=n_clusters, n_init=init)
@@ -149,16 +150,19 @@ class BGMModel(Model):
     def _fit(self, samples, n_clusters=None):
         t_start = timer()
         self._n_features = len(samples[0])
+        adaptive_n_clusters = False
         if n_clusters is None:
+            adaptive_n_clusters = True
             n_clusters = min(len(samples), 256)
         estimator = self.bgmm_fit(samples, n_clusters)
-        cover_clusters = self.coveraging_clusters(estimator.weights_)
-        while estimator.n_components > 16 and cover_clusters < 0.8 * estimator.n_components:
-            new_estimator = self.bgmm_fit(samples, int(0.8 * estimator.n_components))
-            if np.max(new_estimator.weights_) > 0.7:
-                break
-            estimator = new_estimator
+        if adaptive_n_clusters:
             cover_clusters = self.coveraging_clusters(estimator.weights_)
+            while estimator.n_components > 16 and cover_clusters < 0.8 * estimator.n_components:
+                new_estimator = self.bgmm_fit(samples, int(0.8 * estimator.n_components))
+                if np.max(new_estimator.weights_) > 0.7:
+                    break
+                estimator = new_estimator
+                cover_clusters = self.coveraging_clusters(estimator.weights_)
         n_clusters = estimator.n_components
         _logger.info('Finally got a BGM model on %d samples using %d features for %d clusters. %.3f sec' %
                      (len(samples), self._n_features_transformed, n_clusters, timer() - t_start))
@@ -195,30 +199,22 @@ class BGMModel(Model):
         return labels
 
 
-class DBSCANModel(Model):
+class MeanShiftModel(Model):
 
-    def __init__(self, eps=None, min_samples=None):
+    def __init__(self):
         Model.__init__(self)
-        self._eps = eps
-        self._min_samples = min_samples
 
-    def centroid_indices(self):
-        return self._estimator.core_sample_indices_
+    def centroids(self):
+        return self._estimator.cluster_centers_
 
     def _fit(self, samples, n_clusters=None):
         t_start = timer()
         n_features = len(samples[0])
-        if self._eps is None:
-            self._eps = np.sqrt(n_features * 0.5)
-        if self._min_samples is None:
-            self._min_samples = max(10, int(len(samples)/ 100))
-        _logger.info('Running DBSCAN %d samples using %d features for eps=%g and min_samples=%d ...' %
-                      (len(samples), n_features, self._eps, self._min_samples))
-        estimator = DBSCAN(eps=self._eps, min_samples=self._min_samples)
+        _logger.info('Running MeanShift %d samples using %d features ...' % (len(samples), n_features))
+        estimator = MeanShift()
         estimator.fit(samples)
-        n_clusters = len(set(estimator.labels_)) - (1 if -1 in estimator.labels_ else 0)
-        _logger.info('Contains %d unclassified samples' % len(np.where(estimator.labels_ == -1)[0]))
-        _logger.info('Finished DBSCAN on %d samples using %d features for %d clusters. %.3f sec.' %
+        n_clusters = len(estimator.cluster_centers_)
+        _logger.info('Finished MeanShift on %d samples using %d features for %d clusters. %.3f sec.' %
                      (len(samples), n_features, n_clusters, timer() - t_start))
         return estimator, n_clusters
 

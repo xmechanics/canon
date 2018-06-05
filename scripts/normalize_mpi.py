@@ -81,7 +81,6 @@ if __name__ == '__main__':
     #     file_names = get_file_names("/Volumes/G-DRIVE/xmax_tiff/CuAlMn_Dec2017/C_2_1_test")
 
     if MPI_RANK == 0:
-        file_names = get_file_names(GDRIVE + "/CuAlMn_Dec2017/C_4_2_test")
-        file_names += get_file_names(GDRIVE + "/CuAlMn_Dec2017/C_7_2_test")
-        file_names += get_file_names(GDRIVE + "/others_2018")
+        file_names = get_file_names(GDRIVE + "/ZrO2_770C_wb1")
+
     process_images(file_names, "img/processed")

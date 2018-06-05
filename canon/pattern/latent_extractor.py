@@ -16,6 +16,7 @@ class LatentExtractor(FeaturesExtractor):
         _logger.info("Loaded an encoder with %d features" % (self.n_features()))
 
     def features(self, img_data, skip_normalize=True):
+        img_data = img_data.astype("float32") / 255.
         return self.__encoder.predict(img_data)
 
     def get_encoder(self):

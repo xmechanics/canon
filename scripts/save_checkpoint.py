@@ -8,7 +8,7 @@ import canon.autoencode
 
 if __name__ == "__main__":
     model_name = canon.autoencode.AE_128_to_256
-    checkpoint = "checkpoints/%s/autoencoder.1685.hdf5" % model_name
+    checkpoint = "checkpoints/%s/autoencoder.999.hdf5" % model_name
 
     autoencoder = keras.models.load_model(checkpoint)
     encoder = autoencoder.layers[1]

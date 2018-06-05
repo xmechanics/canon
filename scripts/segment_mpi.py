@@ -17,7 +17,7 @@ _logger = logging.getLogger(__name__)
 
 from canon.pattern import LatentExtractor, PeakNumberExtractor, CombinedExtractor
 from canon.dat.datreader import read_dats, idx2XY
-from canon.pattern.model import GMModel, KMeansModel, BGMModel, DBSCANModel
+from canon.pattern.model import GMModel, KMeansModel, BGMModel, MeanShiftModel
 from canon.pattern.labeler import SeqLabeler
 from canon.util import split_workload
 from canon.mpi import extract_sample_features, score_dir
@@ -74,10 +74,8 @@ if __name__ == '__main__':
     from canon.common.init import init_mpi_logging
     init_mpi_logging("logging_mpi.yaml")
 
-    from canon.autoencode.models import AE_128_to_256
-
     extractor1 = PeakNumberExtractor()
-    extractor2 = LatentExtractor(AE_128_to_256)
+    extractor2 = LatentExtractor("AE_128_to_256")
     extractor = CombinedExtractor([extractor1, extractor2])
     extractor = extractor2
 
@@ -86,11 +84,11 @@ if __name__ == '__main__':
     scratch = "."
     z_file = "Z.txt"
     z_plot = "Z"
-    tiff_dir = os.path.join(scratch, "img", "C_2_1_test_processed")
-    seq_files = [os.path.join(scratch, "seq", "C_2_1_test_.SEQ")]
-    NX = 25
-    NY = 20
-    sampling_steps = (1, 1)
+    # tiff_dir = os.path.join(scratch, "img", "C_2_1_test_processed")
+    # seq_files = [os.path.join(scratch, "seq", "C_2_1_test_.SEQ")]
+    # NX = 25
+    # NY = 20
+    # sampling_steps = (1, 1)
 
     # tiff_dir = os.path.join(scratch, "img", "CuAlNi_mart2_processed")
     # seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
@@ -98,11 +96,17 @@ if __name__ == '__main__':
     # NY = 80
     # sampling_steps = (2, 2)
 
+    tiff_dir = os.path.join(scratch, "img", "ZrO2_770C_wb1_processed")
+    seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
+    NX = 110
+    NY = 80
+    sampling_steps = (1, 2)
+
     step = (5, 5)
     training_set = extract_sample_features(extractor, tiff_dir, NX, sampling_steps)    # sample_patterns on lives on core-0
 
     if MPI_RANK == 0:
-        model = BGMModel()
+        model = MeanShiftModel()
         model.train(np.array(training_set), preprocessors=[StandardScaler(), PCA(whiten=True)])
         # model = DBSCANModel(eps=10, min_samples=10)
         # model.train(np.array(training_set), preprocessors=[StandardScaler()])
