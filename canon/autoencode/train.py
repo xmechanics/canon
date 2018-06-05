@@ -18,7 +18,7 @@ class ModelSaveCallback(keras.callbacks.Callback):
         print("Model saved in {}".format(model_filename))
 
 
-def train(model_name, feed_dir, epochs=10000, initial_epoch=0, checkpoint=None):
+def train(model_name, feed_dir, epochs=10000, initial_epoch=0, checkpoint=None, nersc=False, verbose=0):
     if checkpoint is not None:
         autoencoder = keras.models.load_model(checkpoint)
         encoder = autoencoder.layers[1]
@@ -32,6 +32,8 @@ def train(model_name, feed_dir, epochs=10000, initial_epoch=0, checkpoint=None):
     X_train = feeder.get_training_set()
     run_number = time.time()
     checkpoint_dir = "checkpoints/{}/{}".format(model_name, run_number)
+    if nersc:
+        checkpoint_dir = "$SCRATCH/" + checkpoint_dir
     model_dir = "models/{}/{}".format(model_name, run_number)
     os.makedirs(checkpoint_dir)
     os.makedirs(model_dir)
@@ -44,7 +46,7 @@ def train(model_name, feed_dir, epochs=10000, initial_epoch=0, checkpoint=None):
                     shuffle=True,
                     validation_data=[X_test, X_test],
                     callbacks=callbacks,
-                    verbose=1,
+                    verbose=verbose,
                     initial_epoch=initial_epoch)
 
     #     autoencoder.fit_generator(feeder, epochs=20,
