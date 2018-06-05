@@ -2,7 +2,6 @@ import os
 import time
 import keras
 from keras.callbacks import TensorBoard
-import horovod.keras as hvd
 
 from canon.pattern import ImageDataFeeder
 from canon.autoencode.builder import compile_autoencoder, build
@@ -19,14 +18,14 @@ class ModelSaveCallback(keras.callbacks.Callback):
         print("Model saved in {}".format(model_filename))
 
 
-def train(model_name, feed_dir, epochs=10000, initial_epoch=0, checkpoint=None, nersc=False):
+def train(model_name, feed_dir, epochs=10000, initial_epoch=0, checkpoint=None):
     if checkpoint is not None:
         autoencoder = keras.models.load_model(checkpoint)
         encoder = autoencoder.layers[1]
         decoder = autoencoder.layers[2]
     else:
         encoder, decoder = build(model_name)
-        autoencoder = compile_autoencoder(encoder, decoder, nersc=nersc)
+        autoencoder = compile_autoencoder(encoder, decoder)
 
     feeder = ImageDataFeeder(batch_size=30, test_size=500, img_dir=feed_dir)
     X_test = feeder.get_test_set()
@@ -37,12 +36,7 @@ def train(model_name, feed_dir, epochs=10000, initial_epoch=0, checkpoint=None, 
     os.makedirs(checkpoint_dir)
     os.makedirs(model_dir)
 
-    if not nersc or hvd.rank() == 0:
-        callbacks = [TensorBoard(log_dir="logs/{}".format(run_number)), ModelSaveCallback(checkpoint_dir + "/autoencoder.{0:03d}.hdf5")]        
-    else:
-        callbacks = []
-    if nersc:
-        callbacks.append(hvd.callbacks.BroadcastGlobalVariablesCallback(0))
+    callbacks = [TensorBoard(log_dir="logs/{}".format(run_number)), ModelSaveCallback(checkpoint_dir + "/autoencoder.{0:03d}.hdf5")]
 
     autoencoder.fit(X_train, X_train,
                     epochs=epochs,
