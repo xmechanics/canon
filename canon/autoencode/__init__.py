@@ -10,6 +10,6 @@ def reset_tf_session(nersc=False):
 	if nersc:
 		config=tf.ConfigProto(inter_op_parallelism_threads=int(os.environ['NUM_INTER_THREADS']),
     					intra_op_parallelism_threads=int(os.environ['NUM_INTRA_THREADS']))
-		K.set_session(tf.Session(config=config))    
+		K.set_session(tf.Session(config=config))
     s = K.get_session()
-    return s
+	return s
