@@ -2,9 +2,14 @@ import os
 import time
 import keras
 from keras.callbacks import TensorBoard
+from mpi4py import MPI
 
-from canon.pattern import ImageDataFeeder
+from canon.autoencode.feeder import ImageDataFeeder
 from canon.autoencode.builder import compile_autoencoder, build
+
+
+MPI_COMM = MPI.COMM_WORLD
+MPI_RANK = MPI_COMM.Get_rank()
 
 
 class ModelSaveCallback(keras.callbacks.Callback):
@@ -36,7 +41,10 @@ def train(model_name, feed_dir, epochs=10000, initial_epoch=0, checkpoint=None):
     os.makedirs(checkpoint_dir)
     os.makedirs(model_dir)
 
-    callbacks = [TensorBoard(log_dir="logs/{}".format(run_number)), ModelSaveCallback(checkpoint_dir + "/autoencoder.{0:03d}.hdf5")]
+    if MPI_RANK == 0:
+        callbacks = [TensorBoard(log_dir="logs/{}".format(run_number)), ModelSaveCallback(checkpoint_dir + "/autoencoder.{0:03d}.hdf5")]
+    else:
+        callbacks = []
 
     autoencoder.fit(X_train, X_train,
                     epochs=epochs,
