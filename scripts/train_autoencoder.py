@@ -8,14 +8,16 @@ from canon.autoencode import reset_tf_session
 from canon.autoencode.train import train
 
 if __name__ == "__main__":
-	s = reset_tf_session(nersc=False)
+
+	nersc = "IN_NERSC" in os.environ and os.environ["IN_NERSC"] == "true"
+	s = reset_tf_session(nersc=nersc)
 
     model_name = canon.autoencode.AE_128_to_256
 
     # train from scratch
-    # train(model_name, "img/processed_128")
+    train(model_name, "img/processed_128", nersc=nersc)
 
     # train from checkpoint
-    train(model_name, "img/processed_128",
-         initial_epoch=1686,
-         checkpoint="checkpoints/AE_128_to_256/autoencoder.1685.hdf5")
+    # train(model_name, "img/processed_128",
+    #     initial_epoch=1686,
+    #     checkpoint="checkpoints/AE_128_to_256/autoencoder.1685.hdf5")

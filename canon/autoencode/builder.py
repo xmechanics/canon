@@ -1,17 +1,27 @@
 import keras
 import keras.layers as L
+import horovod.keras as hvd
 
 from canon.autoencode.models import AE_128_to_256, AE_128_to_64
 
 
-def compile_autoencoder(encoder, decoder):
+def compile_autoencoder(encoder, decoder, nersc=False):
     IMAGE_SHAPE =(128, 128)
     inp = L.Input(IMAGE_SHAPE)
     code = encoder(inp)
     reconstruction = decoder(code)
 
     autoencoder = keras.models.Model(inputs=inp, outputs=reconstruction)
-    autoencoder.compile(optimizer="adamax", loss='mse')
+    
+    if nersc:
+        # Horovod: adjust learning rate based on number of GPUs.
+        opt = keras.optimizers.Adamax(1.0 * hvd.size())
+        # Horovod: add Horovod Distributed Optimizer.
+        opt = hvd.DistributedOptimizer(opt)
+        autoencoder.compile(loss="mse", optimizer=opt)
+    else:
+        autoencoder.compile(optimizer="adamax", loss='mse')
+
     return autoencoder
 
 
