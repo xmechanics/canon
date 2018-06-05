@@ -2,14 +2,9 @@ import os
 import time
 import keras
 from keras.callbacks import TensorBoard
-from mpi4py import MPI
 
 from canon.autoencode.feeder import ImageDataFeeder
 from canon.autoencode.builder import compile_autoencoder, build
-
-
-MPI_COMM = MPI.COMM_WORLD
-MPI_RANK = MPI_COMM.Get_rank()
 
 
 class ModelSaveCallback(keras.callbacks.Callback):
@@ -23,7 +18,7 @@ class ModelSaveCallback(keras.callbacks.Callback):
         print("Model saved in {}".format(model_filename))
 
 
-def train(model_name, feed_dir, epochs=10000, initial_epoch=0, checkpoint=None, nersc=False):
+def train(model_name, feed_dir, epochs=10000, initial_epoch=0, checkpoint=None):
     if checkpoint is not None:
         autoencoder = keras.models.load_model(checkpoint)
         encoder = autoencoder.layers[1]
@@ -37,16 +32,12 @@ def train(model_name, feed_dir, epochs=10000, initial_epoch=0, checkpoint=None, 
     X_train = feeder.get_training_set()
     run_number = time.time()
     checkpoint_dir = "checkpoints/{}/{}".format(model_name, run_number)
-    if nersc:
-        checkpoint_dir = "$SCRATCH/" + checkpoint_dir
     model_dir = "models/{}/{}".format(model_name, run_number)
     os.makedirs(checkpoint_dir)
     os.makedirs(model_dir)
 
-    if MPI_RANK == 0:
-        callbacks = [TensorBoard(log_dir="logs/{}".format(run_number)), ModelSaveCallback(checkpoint_dir + "/autoencoder.{0:03d}.hdf5")]
-    else:
-        callbacks = []
+    callbacks = [TensorBoard(log_dir="logs/{}".format(run_number)),
+                 ModelSaveCallback(checkpoint_dir + "/autoencoder.{0:03d}.hdf5")]
 
     autoencoder.fit(X_train, X_train,
                     epochs=epochs,

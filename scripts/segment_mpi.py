@@ -79,24 +79,24 @@ if __name__ == '__main__':
     extractor1 = PeakNumberExtractor()
     extractor2 = LatentExtractor(AE_128_to_256)
     extractor = CombinedExtractor([extractor1, extractor2])
-    # extractor = extractor2
+    extractor = extractor2
 
     # CuAlNi_mart2
     # scratch = "/Users/sherrychen/scratch/"
     scratch = "."
     z_file = "Z.txt"
     z_plot = "Z"
-    # tiff_dir = os.path.join(scratch, "img", "C_2_1_test_processed")
-    # seq_files = [os.path.join(scratch, "seq", "C_2_1_test_.SEQ")]
-    # NX = 25
-    # NY = 20
-    # sampling_steps = (1, 1)
+    tiff_dir = os.path.join(scratch, "img", "C_2_1_test_processed")
+    seq_files = [os.path.join(scratch, "seq", "C_2_1_test_.SEQ")]
+    NX = 25
+    NY = 20
+    sampling_steps = (1, 1)
 
-    tiff_dir = os.path.join(scratch, "img", "CuAlNi_mart2_processed")
-    seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
-    NX = 100
-    NY = 80
-    sampling_steps = (2, 2)
+    # tiff_dir = os.path.join(scratch, "img", "CuAlNi_mart2_processed")
+    # seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
+    # NX = 100
+    # NY = 80
+    # sampling_steps = (2, 2)
 
     step = (5, 5)
     training_set = extract_sample_features(extractor, tiff_dir, NX, sampling_steps)    # sample_patterns on lives on core-0
@@ -113,12 +113,12 @@ if __name__ == '__main__':
     score_inds = score_dir(extractor, model, tiff_dir, limit=None, batch_size=200)
 
     # only support relabeling Guassian Mixture based model for now
-    # if MPI_RANK == 0:
-    #     labeler = SeqLabeler(seq_files)
-    # else:
-    #     labeler = None
-    # labeler = MPI_COMM.bcast(labeler, root=0)
-    # score_inds = relabel(labeler, score_inds)
+    if MPI_RANK == 0:
+        labeler = SeqLabeler(seq_files)
+    else:
+        labeler = None
+    labeler = MPI_COMM.bcast(labeler, root=0)
+    score_inds = relabel(labeler, score_inds)
 
     if MPI_RANK == 0:
         Z = np.empty([NY, NX])

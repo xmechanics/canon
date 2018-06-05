@@ -5,3 +5,4 @@ checkpoints/
 models/
 logs/
 *.log
+.ipynb_checkpoints
