@@ -77,7 +77,7 @@ if __name__ == '__main__':
     extractor1 = PeakNumberExtractor()
     extractor2 = LatentExtractor("AE_128_to_256")
     extractor = CombinedExtractor([extractor1, extractor2])
-    extractor = extractor2
+    # extractor = extractor2
 
     # CuAlNi_mart2
     # scratch = "/Users/sherrychen/scratch/"
@@ -94,19 +94,19 @@ if __name__ == '__main__':
     # seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
     # NX = 100
     # NY = 80
-    # sampling_steps = (2, 2)
+    # sampling_steps = (1, 1)
 
     tiff_dir = os.path.join(scratch, "img", "ZrO2_770C_wb1_processed")
     seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
     NX = 110
     NY = 80
-    sampling_steps = (1, 2)
+    sampling_steps = (1, 1)
 
     step = (5, 5)
     training_set = extract_sample_features(extractor, tiff_dir, NX, sampling_steps)    # sample_patterns on lives on core-0
 
     if MPI_RANK == 0:
-        model = MeanShiftModel()
+        model = GMModel()
         model.train(np.array(training_set), preprocessors=[StandardScaler(), PCA(whiten=True)])
         # model = DBSCANModel(eps=10, min_samples=10)
         # model.train(np.array(training_set), preprocessors=[StandardScaler()])
