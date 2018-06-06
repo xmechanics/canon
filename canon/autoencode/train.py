@@ -1,10 +1,14 @@
 import os
 import time
+import logging
 import keras
 from keras.callbacks import TensorBoard
 
 from canon.autoencode.feeder import ImageDataFeeder
 from canon.autoencode.builder import compile_autoencoder, build
+
+
+_logger = logging.getLogger(__name__)
 
 
 class ModelSaveCallback(keras.callbacks.Callback):
@@ -13,16 +17,18 @@ class ModelSaveCallback(keras.callbacks.Callback):
         self.file_name = file_name
 
     def on_epoch_end(self, epoch, logs=None):
-        model_filename = self.file_name.format(epoch)
-        keras.models.save_model(self.model, model_filename)
-        print("Model saved in {}".format(model_filename))
+        checkpoint = self.file_name.format(epoch)
+        keras.models.save_model(self.model, checkpoint)
+        _logger.info("Saved a new checkpoint in {}".format(checkpoint))
+        previous_checkpoint = self.file_name.format(epoch - 1)
+        if os.path.exists(previous_checkpoint):
+            os.remove(previous_checkpoint)
+            _logger.info("Removed previous checkpoint {}".format(previous_checkpoint))
 
 
 def train(model_name, feed_dir, epochs=10000, initial_epoch=0, checkpoint=None, nersc=False, verbose=0):
     if checkpoint is not None:
         autoencoder = keras.models.load_model(checkpoint)
-        encoder = autoencoder.layers[1]
-        decoder = autoencoder.layers[2]
     else:
         encoder, decoder = build(model_name)
         autoencoder = compile_autoencoder(encoder, decoder)

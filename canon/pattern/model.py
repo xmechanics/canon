@@ -59,6 +59,65 @@ class Model:
         return [record[0] for record in data]
 
 
+class IterativeModel(Model):
+    def __init__(self):
+        Model.__init__(self)
+
+    def _fit(self, samples, n_clusters=None):
+        t_start = timer()
+        if n_clusters is None:
+            n_clusters = min(len(samples), 256)
+        estimator = None
+        terminate = False
+        moving_forward = True  # forward means going towards 0 clusters
+        max_clusters = n_clusters
+        min_clusters = 0
+
+        while not terminate:
+            new_estimator = self._fit_step(samples, n_clusters)
+            if estimator is None:
+                estimator = new_estimator
+                n_clusters = n_clusters // 2
+            else:
+                new_is_better = self._new_estimator_is_better(estimator, new_estimator, samples)
+                n_clusters_2 = new_estimator.n_components
+                if not new_is_better:
+                    moving_forward = not moving_forward
+                else:
+                    estimator = new_estimator
+
+                if moving_forward:
+                    n_clusters = int((n_clusters_2 + min_clusters) / 2.)
+                    max_clusters = n_clusters_2
+                else:
+                    n_clusters = int((n_clusters_2 + max_clusters) / 2.)
+                    min_clusters = n_clusters_2
+
+                if abs(n_clusters - n_clusters_2) < 4:
+                    _logger.info("Terminate the iteration because n_clusters change is only {}".format(
+                        n_clusters - n_clusters_2))
+                    terminate = True
+
+            if not terminate and (n_clusters > 256 or n_clusters < 16):
+                reason = "few" if n_clusters < 16 else "many"
+                _logger.info("Terminate the iteration because n_clusters {} is too {}".format(
+                    n_clusters, reason))
+                terminate = True
+
+        n_clusters = estimator.n_components
+        _logger.info('Finally got a GM model on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
+                     (len(samples), self._n_features_transformed, n_clusters, timer() - t_start,
+                      estimator.aic(samples)))
+        return estimator, n_clusters
+
+    def _fit_step(self, samples, n_clusters):
+        raise NotImplementedError("Need to implement _fit_step")
+
+    # noinspection PyMethodMayBeStatic
+    def _new_estimator_is_better(self, estimator, new_estimator, samples):
+        return False
+
+
 class KMeansModel(Model):
 
     def __init__(self):
@@ -74,7 +133,7 @@ class KMeansModel(Model):
         self.__n_features = len(samples[0])
         n_features = self.__n_features
         _logger.info('Running KMeans on %d samples using %d features for %d clusters ...' %
-                      (len(samples), n_features, n_clusters))
+                     (len(samples), n_features, n_clusters))
         estimator = KMeans(n_clusters=n_clusters, n_init=init)
         estimator.fit(samples)
         # estimator.fit_transform(samples)
@@ -89,39 +148,85 @@ class KMeansModel(Model):
         return self._estimator.predict(data)
 
 
-class MixtureModel(Model):
+class GMModel(IterativeModel):
 
+    def __init__(self, min_prob=0.8):
+        IterativeModel.__init__(self)
+        self.__min_prob = min_prob
+
+    def _fit_step(self, samples, n_clusters):
+        t_start = timer()
+        n_features = len(samples[0])
+        _logger.info('Running GaussianMixture on %d patterns using %d features for %d clusters ...' %
+                     (len(samples), n_features, n_clusters))
+        estimator = GaussianMixture(n_components=n_clusters)
+        estimator.fit(samples)
+        _logger.info('Finished GaussianMixture on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
+                     (len(samples), n_features, n_clusters, timer() - t_start,
+                      estimator.aic(samples)))
+        return estimator
+
+    def _new_estimator_is_better(self, estimator, new_estimator, samples):
+        aic = estimator.aic(samples)
+        new_aic = new_estimator.aic(samples)
+        return new_aic < aic
+
+    def _score_transformed_data(self, data):
+        labels = [-1] * len(data)
+        probs = self._estimator.predict_proba(data)
+        for i, p in enumerate(probs):
+            max_p = np.max(p)
+            if max_p >= self.__min_prob:
+                labels[i] = (np.argmax(p), max_p)
+        return labels
+
+
+class BGMModel(Model):
     def __init__(self, min_prob=0.8):
         Model.__init__(self)
         self.__min_prob = min_prob
 
     def _fit(self, samples, n_clusters=None):
         t_start = timer()
+        self._n_features = len(samples[0])
+        adaptive_n_clusters = False
         if n_clusters is None:
+            adaptive_n_clusters = True
             n_clusters = min(len(samples), 256)
-        best_estimator = None
-        min_aic = None
+        estimator = self.bgmm_fit(samples, n_clusters)
+        if adaptive_n_clusters:
+            cover_clusters = self.coveraging_clusters(estimator.weights_)
+            while estimator.n_components > 16 and cover_clusters < 0.8 * estimator.n_components:
+                new_estimator = self.bgmm_fit(samples, int(0.8 * estimator.n_components))
+                if np.max(new_estimator.weights_) > 0.7:
+                    break
+                estimator = new_estimator
+                cover_clusters = self.coveraging_clusters(estimator.weights_)
+        n_clusters = estimator.n_components
+        _logger.info('Finally got a BGM model on %d samples using %d features for %d clusters. %.3f sec' %
+                     (len(samples), self._n_features_transformed, n_clusters, timer() - t_start))
+        return estimator, n_clusters
 
-        while best_estimator is None or n_clusters >= 16:
-            if best_estimator is not None:
-                n_clusters = n_clusters // 2
-            estimator = self.mixture_fit(samples, n_clusters)
-            aic = estimator.aic(samples)
-            if min_aic is None:
-                min_aic = aic
-            if aic > min_aic and min(abs(aic), abs(min_aic)) < 0.5 * max(abs(min_aic), abs(aic)):
+    def bgmm_fit(self, samples, n_clusters):
+        t_start = timer()
+        n_features = len(samples[0])
+        _logger.info('Running BayesianGaussianMixture on %d samples using %d features for %d clusters ...' %
+                     (len(samples), n_features, n_clusters))
+        estimator = BayesianGaussianMixture(n_components=n_clusters, covariance_type='full')
+        estimator.fit(samples)
+        _logger.info('Finished GaussianMixture on %d samples using %d features for %d clusters. %.3f sec.'
+                     % (len(samples), n_features, n_clusters, timer() - t_start))
+        return estimator
+
+    def coveraging_clusters(self, weights):
+        ws = np.flip(np.sort(weights), axis=0)
+        w_cum = 0
+        i = len(ws) - 1
+        for i, w in enumerate(ws):
+            w_cum += w
+            if w_cum >= 0.95:
                 break
-            elif aic <= min_aic:
-                best_estimator, min_aic = estimator, aic
-
-        n_clusters = best_estimator.n_components
-        _logger.info('Finally got a GM model on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
-                     (len(samples), self._n_features_transformed, n_clusters, timer() - t_start,
-                      best_estimator.aic(samples)))
-        return best_estimator, n_clusters
-
-    def mixture_fit(self, samples, n_clusters):
-        raise NotImplementedError("Need to implement mixture_fit")
+        return i + 1
 
     def _score_transformed_data(self, data):
         labels = [None] * len(data)
@@ -131,71 +236,6 @@ class MixtureModel(Model):
             if max_p >= self.__min_prob:
                 labels[i] = (np.argmax(p), max_p)
         return labels
-
-
-class GMModel(MixtureModel):
-
-    def __init__(self, min_prob=0.8):
-        MixtureModel.__init__(self, min_prob)
-
-    def mixture_fit(self, samples, n_clusters):
-        t_start = timer()
-        n_features = len(samples[0])
-        _logger.info('Running GaussianMixture on %d patterns using %d features for %d clusters ...' %
-                      (len(samples), n_features, n_clusters))
-        estimator = GaussianMixture(n_components=n_clusters)
-        estimator.fit(samples)
-        _logger.info('Finished GaussianMixture on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
-                     (len(samples), n_features, n_clusters, timer() - t_start,
-                      estimator.aic(samples)))
-        return estimator
-
-
-class BGMModel(MixtureModel):
-    def __init__(self, min_prob=0.8):
-        MixtureModel.__init__(self, min_prob)
-
-    # def _fit(self, samples, n_clusters=None):
-    #     t_start = timer()
-    #     self._n_features = len(samples[0])
-    #     adaptive_n_clusters = False
-    #     if n_clusters is None:
-    #         adaptive_n_clusters = True
-    #         n_clusters = min(len(samples), 256)
-    #     estimator = self.bgmm_fit(samples, n_clusters)
-    #     if adaptive_n_clusters:
-    #         cover_clusters = self.coveraging_clusters(estimator.weights_)
-    #         while estimator.n_components > 16 and cover_clusters < 0.8 * estimator.n_components:
-    #             new_estimator = self.bgmm_fit(samples, int(0.8 * estimator.n_components))
-    #             if np.max(new_estimator.weights_) > 0.7:
-    #                 break
-    #             estimator = new_estimator
-    #             cover_clusters = self.coveraging_clusters(estimator.weights_)
-    #     n_clusters = estimator.n_components
-    #     _logger.info('Finally got a BGM model on %d samples using %d features for %d clusters. %.3f sec' %
-    #                  (len(samples), self._n_features_transformed, n_clusters, timer() - t_start))
-    #     return estimator, n_clusters
-
-    def mixture_fit(self, samples, n_clusters):
-        t_start = timer()
-        n_features = len(samples[0])
-        _logger.info('Running BayesianGaussianMixture on %d samples using %d features for %d clusters ...' %
-                      (len(samples), n_features, n_clusters))
-        estimator = BayesianGaussianMixture(n_components=n_clusters, covariance_type='full')
-        estimator.fit(samples)
-        _logger.info('Finished GaussianMixture on %d samples using %d features for %d clusters. %.3f sec.'
-                     % (len(samples), n_features, n_clusters, timer() - t_start))
-        return estimator
-
-    # def coveraging_clusters(self, weights):
-    #     ws = np.flip(np.sort(weights), axis=0)
-    #     w_cum = 0
-    #     i = len(ws) - 1
-    #     for i, w in enumerate(ws):
-    #         w_cum += w
-    #         if w_cum >= 0.95:
-    #             break
-    #     return i + 1
 
 
 class MeanShiftModel(Model):
