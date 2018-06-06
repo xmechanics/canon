@@ -67,30 +67,40 @@ def build_deep_autoencoder(img_shape, code_size):
     encoder = keras.models.Sequential()
     encoder.add(L.InputLayer(img_shape))
     encoder.add(L.Reshape((H, W, 1)))
-    encoder.add(L.Conv2D(8, kernel_size=(3, 3), activation='elu', padding='same'))
+    encoder.add(L.Conv2D(8, kernel_size=(3, 3), activation='relu', padding='same'))
     encoder.add(L.MaxPooling2D(pool_size=(2, 2), padding='same'))
-    encoder.add(L.Conv2D(16, kernel_size=(3, 3), activation='elu', padding='same'))
+    encoder.add(L.Dropout(0.5))
+    encoder.add(L.Conv2D(16, kernel_size=(3, 3), activation='relu', padding='same'))
     encoder.add(L.MaxPooling2D(pool_size=(2, 2), padding='same'))
-    encoder.add(L.Conv2D(32, kernel_size=(3, 3), activation='elu', padding='same'))
+    encoder.add(L.Dropout(0.5))
+    encoder.add(L.Conv2D(32, kernel_size=(3, 3), activation='relu', padding='same'))
     encoder.add(L.MaxPooling2D(pool_size=(2, 2), padding='same'))
+    encoder.add(L.Dropout(0.5))
     encoder.add(L.Conv2D(64, kernel_size=(3, 3), activation='elu', padding='same'))
     encoder.add(L.MaxPooling2D(pool_size=(2, 2), padding='same'))
+    encoder.add(L.Dropout(0.5))
     encoder.add(L.Flatten())
-    encoder.add(L.Dense(1024, activation='elu'))
-    encoder.add(L.Dense(code_size, activation='elu'))
+    encoder.add(L.Dense(1024, activation='relu'))
+    encoder.add(L.Dropout(0.5))
+    encoder.add(L.Dense(code_size, activation='relu'))
 
-    flatten_size = encoder.layers[-3].output_shape[1]
-    encoded_img_size = encoder.layers[-4].output_shape[1:]
+    flatten_size = encoder.layers[-4].output_shape[1]
+    encoded_img_size = encoder.layers[-5].output_shape[1:]
 
     # decoder
     decoder = keras.models.Sequential()
     decoder.add(L.InputLayer((code_size,)))
     decoder.add(L.Dense(1024, activation='elu'))
+    decoder.add(L.Dropout(0.5))
     decoder.add(L.Dense(flatten_size, activation='elu'))
+    decoder.add(L.Dropout(0.5))
     decoder.add(L.Reshape(encoded_img_size))
-    decoder.add(L.Conv2DTranspose(filters=32, kernel_size=(3, 3), strides=2, activation='elu', padding='same'))
-    decoder.add(L.Conv2DTranspose(filters=16, kernel_size=(3, 3), strides=2, activation='elu', padding='same'))
-    decoder.add(L.Conv2DTranspose(filters=8, kernel_size=(3, 3), strides=2, activation='elu', padding='same'))
+    decoder.add(L.Conv2DTranspose(filters=32, kernel_size=(3, 3), strides=2, activation='relu', padding='same'))
+    decoder.add(L.Dropout(0.5))
+    decoder.add(L.Conv2DTranspose(filters=16, kernel_size=(3, 3), strides=2, activation='relu', padding='same'))
+    decoder.add(L.Dropout(0.5))
+    decoder.add(L.Conv2DTranspose(filters=8, kernel_size=(3, 3), strides=2, activation='relu', padding='same'))
+    decoder.add(L.Dropout(0.5))
     decoder.add(L.Conv2DTranspose(filters=1, kernel_size=(3, 3), strides=2, activation='sigmoid', padding='same'))
     output_img_size = decoder.layers[-1].output_shape[1:-1]
     decoder.add(L.Reshape(output_img_size))
@@ -100,11 +110,7 @@ def build_deep_autoencoder(img_shape, code_size):
 
 if __name__ == "__main__":
     from canon.autoencode import reset_tf_session
-
-    IMAGE_SHAPE = (128, 128)
-    CODE_SIZE = 256
-
     s = reset_tf_session()
-    encoder, decoder = build(AE_128_to_64)
+    encoder, decoder = build(AE_128_to_256)
     encoder.summary()
     decoder.summary()

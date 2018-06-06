@@ -17,12 +17,33 @@ import canon
 from canon.util import split_workload
 
 
-def get_file_names(img_dir, samples=-1):
-    file_names = [os.path.join(img_dir, filename) for filename in os.listdir(img_dir)]
-    if samples > 0:
-        return np.random.choice(file_names, samples).tolist()
-    else:
-        return file_names
+def to_jpg_name(tiff_name):
+    return tiff_name.lower().split("/")[-1].replace(".tiff", ".jpg").replace(".tif", ".jpg")
+
+
+def get_existing_names(dirs):
+    existing_names = set()
+    for target_dir in dirs:
+        existing_names |= set([filename for filename in os.listdir(target_dir)])
+        _logger.info("Found {} files in target dirs".format(len(existing_names)))
+    return existing_names
+
+
+def get_file_names(img_dir, sample_rate=0.1, existing_names=set()):
+    file_names = []
+    files_in_subdir = []
+    for filename in os.listdir(img_dir):
+        path = os.path.join(img_dir, filename)
+        if os.path.isdir(path):
+            files_in_subdir += get_file_names(path, sample_rate=sample_rate, existing_names=existing_names)
+        elif np.random.rand(1) <= sample_rate:
+            file_names.append(os.path.join(img_dir, filename))
+    file_names = [f for f in file_names if to_jpg_name(f) not in existing_names]
+    file_names = file_names + files_in_subdir
+    _logger.info("Found {} files in {}, including {} in sub folders.".format(len(file_names),
+                                                                             img_dir,
+                                                                             len(files_in_subdir)))
+    return file_names
 
 
 def process_images(file_paths, output_dir):
@@ -39,7 +60,7 @@ def process_images(file_paths, output_dir):
     _logger.info('Assigned %d image files to process.' % len(filenames))
     t0_loc = timer()
     for i, tiff in enumerate(filenames):
-        jpg = tiff.lower().split("/")[-1].replace(".tiff", ".jpg").replace(".tif", ".jpg")
+        jpg = to_jpg_name(tiff)
 
         reader = canon.TiffReader(canon.TiffReader.PILATUS)
         reader.loadtiff(tiff)
@@ -68,19 +89,9 @@ if __name__ == '__main__':
 
     init_mpi_logging("logging_mpi.yaml")
 
-    GDRIVE = "/Volumes/G-DRIVE/xmax_tiff"
     file_names = []
-    # if MPI_RANK == 0:
-    #     for d in os.listdir("/Volumes/G-DRIVE/xmax_tiff"):
-    #         if d != "CuAlMn_Dec2017" and d[0] != '.' and d[0] != "$" and d[-4:] != ".cal":
-    #             file_names += get_file_names("/Volumes/G-DRIVE/xmax_tiff" + d, samples=200)
-    #     for d in os.listdir("/Volumes/G-DRIVE/xmax_tiff/CuAlMn_Dec2017"):
-    #         file_names += get_file_names("/Volumes/G-DRIVE/xmax_tiff/CuAlMn_Dec2017" + d, samples=200)
-    #     _logger.info("Collected %d files" % len(file_names))
-    # if MPI_RANK == 0:
-    #     file_names = get_file_names("/Volumes/G-DRIVE/xmax_tiff/CuAlMn_Dec2017/C_2_1_test")
-
     if MPI_RANK == 0:
-        file_names = get_file_names(GDRIVE + "/ZrO2_770C_wb1")
+        existing_names = get_existing_names(["img/test_128"])
+        file_names = get_file_names("/Volumes/G-DRIVE/xmax_tiff", sample_rate=0.25, existing_names=existing_names)
 
     process_images(file_names, "img/processed")

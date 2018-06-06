@@ -26,14 +26,14 @@ class ModelSaveCallback(keras.callbacks.Callback):
             _logger.info("Removed previous checkpoint {}".format(previous_checkpoint))
 
 
-def train(model_name, feed_dir, epochs=10000, initial_epoch=0, checkpoint=None, nersc=False, verbose=0):
+def train(model_name, training_dir, test_dir, epochs=10000, initial_epoch=0, checkpoint=None, nersc=False, verbose=0):
     if checkpoint is not None:
         autoencoder = keras.models.load_model(checkpoint)
     else:
         encoder, decoder = build(model_name)
         autoencoder = compile_autoencoder(encoder, decoder)
 
-    feeder = ImageDataFeeder(batch_size=30, test_size=500, img_dir=feed_dir)
+    feeder = ImageDataFeeder(batch_size=100, training_dir=training_dir, test_dir=test_dir)
     X_test = feeder.get_test_set()
     X_train = feeder.get_training_set()
     run_number = time.time()
