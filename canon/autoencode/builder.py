@@ -1,7 +1,8 @@
 import keras
 import keras.layers as L
 
-from canon.autoencode.models import AE_128_to_256, AE_128_to_64
+AE_128_to_256 = "AE_128_to_256"
+AE_128_to_64 = "AE_128_to_64"
 
 
 def compile_autoencoder(encoder, decoder):
