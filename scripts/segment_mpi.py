@@ -100,13 +100,13 @@ if __name__ == '__main__':
     seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
     NX = 110
     NY = 80
-    sampling_steps = (1, 1)
+    sample_rate = 0.3
 
     step = (5, 5)
-    training_set = extract_sample_features(extractor, tiff_dir, NX, sampling_steps)    # sample_patterns on lives on core-0
+    training_set = extract_sample_features(extractor, tiff_dir, sample_rate=sample_rate)    # sample_patterns on lives on core-0
 
     if MPI_RANK == 0:
-        model = GMModel()
+        model = BGMModel()
         model.train(np.array(training_set), preprocessors=[StandardScaler(), PCA(whiten=True)])
         # model = DBSCANModel(eps=10, min_samples=10)
         # model.train(np.array(training_set), preprocessors=[StandardScaler()])

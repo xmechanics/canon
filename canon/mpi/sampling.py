@@ -16,7 +16,7 @@ from canon.pattern.feature_extractor import FeaturesExtractor
 from canon.util import split_workload, idx2XY
 
 
-def extract_sample_features(extractor: FeaturesExtractor, dir_path, NX, steps, blacklist=[]):
+def extract_sample_features(extractor: FeaturesExtractor, dir_path, sample_rate=0.9, blacklist=[]):
     if MPI_RANK == 0:
         t0 = timer()
         filenames = [filename for filename in os.listdir(dir_path)]
@@ -25,10 +25,9 @@ def extract_sample_features(extractor: FeaturesExtractor, dir_path, NX, steps, b
         for filename in filenames:
             if filename in blacklist:
                 continue
-            X, Y = idx2XY(int(filename[-9:-4]), NX)
-            if X % steps[0] == 0 and Y % steps[1] == 0:
+            if np.random.rand(1) < sample_rate:
                 sample_files.append(os.path.join(dir_path, filename))
-        _logger.info('Selected %d sample files according to step size %s.' % (len(sample_files), steps))
+        _logger.info('Selected %d sample files according to sample rate %g%%.' % (len(sample_files), sample_rate * 100.))
         file_groups = split_workload(sample_files, MPI_COMM.size)
     else:
         file_groups = None
