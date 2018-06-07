@@ -75,9 +75,9 @@ if __name__ == '__main__':
     init_mpi_logging("logging_mpi.yaml")
 
     extractor1 = PeakNumberExtractor()
-    extractor2 = LatentExtractor("AE_128_to_256")
+    extractor2 = LatentExtractor("AE_128_256_20180606")
     extractor = CombinedExtractor([extractor1, extractor2])
-    # extractor = extractor2
+    extractor = extractor2
 
     # CuAlNi_mart2
     # scratch = "/Users/sherrychen/scratch/"
@@ -88,19 +88,19 @@ if __name__ == '__main__':
     # seq_files = [os.path.join(scratch, "seq", "C_2_1_test_.SEQ")]
     # NX = 25
     # NY = 20
-    # sampling_steps = (1, 1)
+    # sample_rate = 1.0
 
-    # tiff_dir = os.path.join(scratch, "img", "CuAlNi_mart2_processed")
-    # seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
-    # NX = 100
-    # NY = 80
-    # sampling_steps = (1, 1)
-
-    tiff_dir = os.path.join(scratch, "img", "ZrO2_770C_wb1_processed")
+    tiff_dir = os.path.join(scratch, "img", "CuAlNi_mart2_processed")
     seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
-    NX = 110
+    NX = 100
     NY = 80
-    sample_rate = 0.3
+    sample_rate = 1.0
+
+    # tiff_dir = os.path.join(scratch, "img", "ZrO2_770C_wb1_processed")
+    # seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
+    # NX = 110
+    # NY = 80
+    # sample_rate = 1.0
 
     step = (5, 5)
     training_set = extract_sample_features(extractor, tiff_dir, sample_rate=sample_rate)    # sample_patterns on lives on core-0
@@ -142,6 +142,7 @@ if __name__ == '__main__':
     # Visualization
     if MPI_RANK == 0:
         Z = np.loadtxt(z_file)
-        plot_seq(Z, step, colormap='jet', filename=os.path.join(scratch, "img", z_plot))
+        scaler = model.get_label_scaler()
+        plot_seq(scaler(Z), step, colormap='jet', filename=os.path.join(scratch, "img", z_plot))
 
 

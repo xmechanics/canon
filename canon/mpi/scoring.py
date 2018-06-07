@@ -62,5 +62,6 @@ def score_batch(extractor, model, filenames):
     scores = model.score(extractor.features(img_data))
     _logger.info('Scored a batch of %d [local] patterns, %d are [None]. %g sec'
                   % (len(filenames), sum(1 for s in scores if s is None), timer() - t0))
+
     return [(s, i) for (s, i) in zip(scores, indices) if s is not None]
 

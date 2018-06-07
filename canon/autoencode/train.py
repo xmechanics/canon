@@ -33,7 +33,9 @@ def train(model_name, training_dir, test_dir, epochs=10000, initial_epoch=0, che
         encoder, decoder = build(model_name)
         autoencoder = compile_autoencoder(encoder, decoder)
 
-    feeder = ImageDataFeeder(batch_size=100, training_dir=training_dir, test_dir=test_dir)
+    batch_size = 100
+
+    feeder = ImageDataFeeder(batch_size=batch_size, training_dir=training_dir, test_dir=test_dir)
     X_test = feeder.get_test_set()
     X_train = feeder.get_training_set()
     run_number = time.time()
@@ -49,6 +51,7 @@ def train(model_name, training_dir, test_dir, epochs=10000, initial_epoch=0, che
 
     autoencoder.fit(X_train, X_train,
                     epochs=epochs,
+                    batch_size=batch_size,
                     shuffle=True,
                     validation_data=[X_test, X_test],
                     callbacks=callbacks,

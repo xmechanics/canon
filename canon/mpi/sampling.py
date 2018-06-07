@@ -25,7 +25,7 @@ def extract_sample_features(extractor: FeaturesExtractor, dir_path, sample_rate=
         for filename in filenames:
             if filename in blacklist:
                 continue
-            if np.random.rand(1) < sample_rate:
+            if np.random.rand(1) <= sample_rate:
                 sample_files.append(os.path.join(dir_path, filename))
         _logger.info('Selected %d sample files according to sample rate %g%%.' % (len(sample_files), sample_rate * 100.))
         file_groups = split_workload(sample_files, MPI_COMM.size)

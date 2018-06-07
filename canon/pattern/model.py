@@ -2,8 +2,9 @@ import numpy as np
 import logging
 from timeit import default_timer as timer
 from sklearn.mixture import GaussianMixture, BayesianGaussianMixture
-from sklearn.cluster import KMeans, DBSCAN, MeanShift
+from sklearn.cluster import KMeans, DBSCAN, MeanShift, estimate_bandwidth
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
 _logger = logging.getLogger(__name__)
 
@@ -16,6 +17,16 @@ class Model:
         self.__preprocessors = []
         self._estimator = None
         self._n_features_transformed = None
+
+    def centroids(self):
+        raise NotImplementedError
+
+    def get_label_scaler(self):
+        centroids = self.centroids()[:]
+        transformed_centroids = PCA().fit_transform(centroids)
+        transformed_labels = transformed_centroids[:, 0]
+        sorter = np.argsort(transformed_labels)
+        return np.vectorize(lambda z: (sorter[int(z)] if z >= 0 else np.nan))
 
     def train(self, data, preprocessors=None, n_clusters=None):
         n_patterns = len(data)
@@ -56,7 +67,7 @@ class Model:
         return self._score_transformed_data(data)
 
     def _score_transformed_data(self, data):
-        return [record[0] for record in data]
+        return np.array([record[0] for record in data])
 
 
 class IterativeModel(Model):
@@ -153,6 +164,9 @@ class GMModel(IterativeModel):
         IterativeModel.__init__(self)
         self.__min_prob = min_prob
 
+    def centroids(self):
+        return self._estimator.means_
+
     def _fit_step(self, samples, n_clusters):
         t_start = timer()
         n_features = len(samples[0])
@@ -171,7 +185,7 @@ class GMModel(IterativeModel):
         return new_aic < aic
 
     def _score_transformed_data(self, data):
-        labels = [None] * len(data)
+        labels = [-1] * len(data)
         probs = self._estimator.predict_proba(data)
         for i, p in enumerate(probs):
             max_p = np.max(p)
@@ -184,6 +198,29 @@ class BGMModel(IterativeModel):
     def __init__(self, min_prob=0.8):
         IterativeModel.__init__(self)
         self.__min_prob = min_prob
+
+    def centroids(self):
+        return self._estimator.means_
+
+    def _fit(self, samples, n_clusters=None):
+        t_start = timer()
+        if n_clusters is None:
+            n_clusters = min(len(samples), 256)
+        n_features = len(samples[0])
+
+        _logger.info('Running BayesianGaussianMixture on %d samples using %d features for %d clusters ...' %
+                     (len(samples), n_features, n_clusters))
+        estimator = BayesianGaussianMixture(n_components=n_clusters, covariance_type='full')
+        estimator.fit(samples)
+        _logger.info('Finished BayesianGaussianMixture on %d samples using %d features for %d clusters. %.3f sec. '
+                     '90-percentile coverage = %g' %
+                     (len(samples), n_features, n_clusters, timer() - t_start,
+                      self.ninety_percentile_coverage(estimator.weights_)))
+
+        n_clusters = estimator.n_components
+        _logger.info('Finally got a BGM model on %d patterns using %d features for %d clusters. %.3f sec' %
+                     (len(samples), self._n_features_transformed, n_clusters, timer() - t_start))
+        return estimator, n_clusters
 
     def _fit_step(self, samples, n_clusters):
         t_start = timer()
@@ -205,11 +242,11 @@ class BGMModel(IterativeModel):
     @staticmethod
     def ninety_percentile_coverage(weights):
         ninety = np.percentile(weights, 90)
-        below = weights[np.where(weights <= ninety)]
-        return float(np.sum(below) * 0.9 * len(weights) / len(below))
+        above = weights[np.where(weights > ninety)]
+        return float(np.sum(above) * len(weights) / len(above))
 
     def _score_transformed_data(self, data):
-        labels = [None] * len(data)
+        labels = [-1] * len(data)
         probs = self._estimator.predict_proba(data)
         for i, p in enumerate(probs):
             max_p = np.max(p)
@@ -230,7 +267,9 @@ class MeanShiftModel(Model):
         t_start = timer()
         n_features = len(samples[0])
         _logger.info('Running MeanShift %d samples using %d features ...' % (len(samples), n_features))
-        estimator = MeanShift(cluster_all=False)
+        bandwidth = estimate_bandwidth(samples, quantile=0.2, n_samples=min(500, int(len(samples) * 0.1)))
+        _logger.info("Estimated bandwidth is {}".format(bandwidth))
+        estimator = MeanShift(bandwidth=bandwidth, cluster_all=False)
         estimator.fit(samples)
         n_clusters = len(estimator.cluster_centers_)
         _logger.info('Finished MeanShift on %d samples using %d features for %d clusters. %.3f sec.' %
@@ -238,4 +277,29 @@ class MeanShiftModel(Model):
         return estimator, n_clusters
 
     def _score_transformed_data(self, data):
-        return self._estimator.fit_predict(data)
+        return self._estimator.predict(data)
+
+
+# class DBSCANModel(Model):
+#
+#     def __init__(self):
+#         Model.__init__(self)
+#
+#     def centroids(self):
+#         return self._estimator.cluster_centers_
+#
+#     def _fit(self, samples, n_clusters=None):
+#         t_start = timer()
+#         n_features = len(samples[0])
+#         _logger.info('Running MeanShift %d samples using %d features ...' % (len(samples), n_features))
+#         eps = estimate_bandwidth(samples, quantile=0.2, n_samples=min(500, int(len(samples) * 0.1)))
+#         _logger.info("Estimated eps is {}".format(eps))
+#         estimator = DBSCAN(eps=eps, min_samples=5)
+#         estimator.fit(samples)
+#         n_clusters = len(estimator.components_)
+#         _logger.info('Finished MeanShift on %d samples using %d features for %d clusters. %.3f sec.' %
+#                      (len(samples), n_features, n_clusters, timer() - t_start))
+#         return estimator, n_clusters
+#
+#     def _score_transformed_data(self, data):
+#         return self._estimator.fit_predict(data)
