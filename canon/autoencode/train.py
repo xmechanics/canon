@@ -26,25 +26,24 @@ class ModelSaveCallback(keras.callbacks.Callback):
             _logger.info("Removed previous checkpoint {}".format(previous_checkpoint))
 
 
-def train(model_name, training_dir, test_dir, epochs=10000, initial_epoch=0, checkpoint=None, nersc=False, verbose=0):
+def train(architecture, training_dir, test_dir, epochs=10000, initial_epoch=0, run_number=None, checkpoint=None, verbose=0):
     if checkpoint is not None:
         autoencoder = keras.models.load_model(checkpoint)
+        autoencoder.compile(optimizer="adamax", loss='binary_crossentropy')
     else:
-        encoder, decoder = build(model_name)
+        encoder, decoder = build(architecture)
         autoencoder = compile_autoencoder(encoder, decoder)
 
-    batch_size = 100
+    batch_size = 500
 
     feeder = ImageDataFeeder(batch_size=batch_size, training_dir=training_dir, test_dir=test_dir)
     X_test = feeder.get_test_set()
     X_train = feeder.get_training_set()
-    run_number = time.time()
-    checkpoint_dir = "checkpoints/{}/{}".format(model_name, run_number)
-    if nersc:
-        checkpoint_dir = "$SCRATCH/" + checkpoint_dir
-    model_dir = "models/{}/{}".format(model_name, run_number)
-    os.makedirs(checkpoint_dir)
-    os.makedirs(model_dir)
+    if run_number is None:
+        run_number = architecture
+    checkpoint_dir = "checkpoints/{}/{}".format(architecture, run_number)
+    if not os.path.exists(checkpoint_dir):
+        os.makedirs(checkpoint_dir)
 
     callbacks = [TensorBoard(log_dir="logs/{}".format(run_number)),
                  ModelSaveCallback(checkpoint_dir + "/autoencoder.{0:03d}.hdf5")]

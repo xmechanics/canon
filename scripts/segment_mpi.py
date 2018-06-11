@@ -75,7 +75,7 @@ if __name__ == '__main__':
     init_mpi_logging("logging_mpi.yaml")
 
     extractor1 = PeakNumberExtractor()
-    extractor2 = LatentExtractor("AE_128_256_20180606")
+    extractor2 = LatentExtractor("ae_128_256_conv_4_dense_2_dropout")
     extractor = CombinedExtractor([extractor1, extractor2])
     extractor = extractor2
 
@@ -90,26 +90,24 @@ if __name__ == '__main__':
     # NY = 20
     # sample_rate = 1.0
 
-    tiff_dir = os.path.join(scratch, "img", "CuAlNi_mart2_processed")
-    seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
-    NX = 100
-    NY = 80
-    sample_rate = 1.0
-
-    # tiff_dir = os.path.join(scratch, "img", "ZrO2_770C_wb1_processed")
+    # tiff_dir = os.path.join(scratch, "img", "CuAlNi_mart2_processed")
     # seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
-    # NX = 110
+    # NX = 100
     # NY = 80
     # sample_rate = 1.0
+
+    tiff_dir = os.path.join(scratch, "img", "ZrO2_770C_wb1_processed")
+    seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
+    NX = 110
+    NY = 80
+    sample_rate = 1.0
 
     step = (5, 5)
     training_set = extract_sample_features(extractor, tiff_dir, sample_rate=sample_rate)    # sample_patterns on lives on core-0
 
     if MPI_RANK == 0:
         model = BGMModel()
-        model.train(np.array(training_set), preprocessors=[StandardScaler(), PCA(whiten=True)])
-        # model = DBSCANModel(eps=10, min_samples=10)
-        # model.train(np.array(training_set), preprocessors=[StandardScaler()])
+        model.train(np.array(training_set), n_clusters=8, preprocessors=[StandardScaler(), PCA(whiten=True)])
     else:
         model = None
     model = MPI_COMM.bcast(model, root=0)

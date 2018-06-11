@@ -76,8 +76,10 @@ class IterativeModel(Model):
 
     def _fit(self, samples, n_clusters=None):
         t_start = timer()
+        iterative = False
         if n_clusters is None:
             n_clusters = min(len(samples), 256)
+            iterative = True
         estimator = None
         terminate = False
         moving_forward = True  # forward means going towards 0 clusters
@@ -89,6 +91,7 @@ class IterativeModel(Model):
             if estimator is None:
                 estimator = new_estimator
                 n_clusters = n_clusters // 2
+                terminate = not iterative
             else:
                 new_is_better = self._new_estimator_is_better(estimator, new_estimator, samples)
                 n_clusters_2 = new_estimator.n_components
@@ -116,7 +119,7 @@ class IterativeModel(Model):
                 terminate = True
 
         n_clusters = estimator.n_components
-        _logger.info('Finally got a GM model on %d patterns using %d features for %d clusters. %.3f sec' %
+        _logger.info('Finally got a model on %d patterns using %d features for %d clusters. %.3f sec' %
                      (len(samples), self._n_features_transformed, n_clusters, timer() - t_start))
         return estimator, n_clusters
 
@@ -201,26 +204,6 @@ class BGMModel(IterativeModel):
 
     def centroids(self):
         return self._estimator.means_
-
-    def _fit(self, samples, n_clusters=None):
-        t_start = timer()
-        if n_clusters is None:
-            n_clusters = min(len(samples), 256)
-        n_features = len(samples[0])
-
-        _logger.info('Running BayesianGaussianMixture on %d samples using %d features for %d clusters ...' %
-                     (len(samples), n_features, n_clusters))
-        estimator = BayesianGaussianMixture(n_components=n_clusters, covariance_type='full')
-        estimator.fit(samples)
-        _logger.info('Finished BayesianGaussianMixture on %d samples using %d features for %d clusters. %.3f sec. '
-                     '90-percentile coverage = %g' %
-                     (len(samples), n_features, n_clusters, timer() - t_start,
-                      self.ninety_percentile_coverage(estimator.weights_)))
-
-        n_clusters = estimator.n_components
-        _logger.info('Finally got a BGM model on %d patterns using %d features for %d clusters. %.3f sec' %
-                     (len(samples), self._n_features_transformed, n_clusters, timer() - t_start))
-        return estimator, n_clusters
 
     def _fit_step(self, samples, n_clusters):
         t_start = timer()
