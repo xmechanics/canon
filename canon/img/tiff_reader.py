@@ -42,7 +42,15 @@ class TiffReader:
         self.__reader.fill_black(self.__image)
         self.__image = subtract(self.__image, cutoff)
 
-    def normalize(self, cutoff=80):
+    def normalize(self):
+        img = self.__image
+        flatten = np.array(img.reshape(np.prod(img.shape))).clip(2000, 10000) - 2000
+        flatten = np.log1p(flatten)
+        flatten = 225 * flatten / flatten.max()
+        img = flatten.reshape(img.shape)
+        self.__image = img[:981, :]
+
+    def normalize_bk(self, cutoff=80):
         img = self.__image
         flat = img.reshape(img.shape[0] * img.shape[1])
         high = np.percentile(flat[np.where(flat > 0)], cutoff)

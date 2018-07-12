@@ -7,7 +7,7 @@ from mpi4py import MPI
 import numpy as np
 
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 MPI_COMM = MPI.COMM_WORLD
 MPI_RANK = MPI_COMM.Get_rank()
@@ -75,15 +75,16 @@ if __name__ == '__main__':
     init_mpi_logging("logging_mpi.yaml")
 
     extractor1 = PeakNumberExtractor()
-    extractor2 = LatentExtractor("ae_128_256_conv_4_dense_2_dropout")
+    extractor2 = LatentExtractor("ae_128_256_conv_4_dense_1")
     extractor = CombinedExtractor([extractor1, extractor2])
     extractor = extractor2
 
     # CuAlNi_mart2
     # scratch = "/Users/sherrychen/scratch/"
-    scratch = "."
+    scratch = os.path.dirname(os.path.abspath(__file__))
     z_file = "Z.txt"
     z_plot = "Z"
+
     # tiff_dir = os.path.join(scratch, "img", "C_2_1_test_processed")
     # seq_files = [os.path.join(scratch, "seq", "C_2_1_test_.SEQ")]
     # NX = 25
@@ -107,7 +108,7 @@ if __name__ == '__main__':
 
     if MPI_RANK == 0:
         model = BGMModel()
-        model.train(np.array(training_set), n_clusters=8, preprocessors=[StandardScaler(), PCA(whiten=True)])
+        model.train(np.array(training_set), preprocessors=[StandardScaler(), PCA(whiten=True)])
     else:
         model = None
     model = MPI_COMM.bcast(model, root=0)

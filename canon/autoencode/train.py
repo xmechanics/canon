@@ -26,13 +26,25 @@ class ModelSaveCallback(keras.callbacks.Callback):
             _logger.info("Removed previous checkpoint {}".format(previous_checkpoint))
 
 
-def train(architecture, training_dir, test_dir, epochs=10000, initial_epoch=0, run_number=None, checkpoint=None, verbose=0):
+def train(architecture, run_number, training_dir, test_dir, epochs=10000, verbose=0, dryrun=False):
+    checkpoint, initial_epoch = find_checkpoint(architecture, run_number)
     if checkpoint is not None:
+        _logger.info("Found initial_epoch={} in checkpoint {}".format(initial_epoch, checkpoint))
         autoencoder = keras.models.load_model(checkpoint)
-        autoencoder.compile(optimizer="adamax", loss='binary_crossentropy')
+        # autoencoder.compile(optimizer="adamax", loss='binary_crossentropy')
+        encoder = autoencoder.layers[1]
+        decoder = autoencoder.layers[2]
     else:
+        _logger.info("Did not find checkpoint, start from scratch")
         encoder, decoder = build(architecture)
         autoencoder = compile_autoencoder(encoder, decoder)
+        initial_epoch = 0
+
+    encoder.summary()
+    decoder.summary()
+
+    if dryrun:
+        return
 
     batch_size = 500
 
@@ -62,5 +74,18 @@ def train(architecture, training_dir, test_dir, epochs=10000, initial_epoch=0, r
     #                     callbacks=[TensorBoard(log_dir="./logs/{}".format(time.time()))],
     #                     verbose=1,
     #                     initial_epoch=last_finished_epoch or 0)
+
+
+def find_checkpoint(architecture, run_number):
+    checkpoint_dir = "checkpoints/{}/{}".format(architecture, run_number)
+    if os.path.exists(checkpoint_dir):
+        fns = os.listdir(checkpoint_dir)
+        if len(fns) >= 1:
+            fns.sort()
+            latest = fns[-1]
+            epoch = int(latest.split(".")[1])
+            checkpoint = os.path.join(checkpoint_dir, latest)
+            return checkpoint, epoch
+    return None, None
 
 
