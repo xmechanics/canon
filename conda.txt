@@ -7,8 +7,9 @@ scipy
 pandas
 scikit-image
 scikit-learn
-tensorflow
+tensorflow==1.2
 Keras
+joblib
 
 yaml
 jupyter

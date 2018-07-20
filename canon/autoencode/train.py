@@ -2,7 +2,7 @@ import os
 import time
 import logging
 import keras
-from keras.callbacks import TensorBoard
+from keras.callbacks import TensorBoard, EarlyStopping
 
 from canon.autoencode.feeder import ImageDataFeeder
 from canon.autoencode.builder import compile_autoencoder, build
@@ -47,8 +47,9 @@ def train(architecture, run_number, training_dir, test_dir, epochs=10000, verbos
         return
 
     batch_size = 500
+    img_shape = encoder.layers[0].input_shape[1:]
 
-    feeder = ImageDataFeeder(batch_size=batch_size, training_dir=training_dir, test_dir=test_dir)
+    feeder = ImageDataFeeder(img_shape, batch_size=batch_size, training_dir=training_dir, test_dir=test_dir)
     X_test = feeder.get_test_set()
     X_train = feeder.get_training_set()
     if run_number is None:
@@ -58,7 +59,8 @@ def train(architecture, run_number, training_dir, test_dir, epochs=10000, verbos
         os.makedirs(checkpoint_dir)
 
     callbacks = [TensorBoard(log_dir="logs/{}".format(run_number)),
-                 ModelSaveCallback(checkpoint_dir + "/autoencoder.{0:03d}.hdf5")]
+                 ModelSaveCallback(checkpoint_dir + "/autoencoder.{0:03d}.hdf5"),
+                 EarlyStopping(min_delta=1e-3, patience=10)]
 
     autoencoder.fit(X_train, X_train,
                     epochs=epochs,
@@ -68,12 +70,6 @@ def train(architecture, run_number, training_dir, test_dir, epochs=10000, verbos
                     callbacks=callbacks,
                     verbose=verbose,
                     initial_epoch=initial_epoch)
-
-    #     autoencoder.fit_generator(feeder, epochs=20,
-    #                     validation_data=[X_test, X_test],
-    #                     callbacks=[TensorBoard(log_dir="./logs/{}".format(time.time()))],
-    #                     verbose=1,
-    #                     initial_epoch=last_finished_epoch or 0)
 
 
 def find_checkpoint(architecture, run_number):

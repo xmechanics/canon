@@ -2,14 +2,21 @@ import os
 import logging
 import numpy as np
 from skimage.io import imread
+from skimage.transform import resize
 from keras.utils import Sequence
+from joblib import Parallel, delayed
 
 _logger = logging.getLogger(__name__)
 
 
+def load_img(f, shape):
+    return resize(imread(f), shape, mode='reflect')
+
+
 class ImageDataFeeder(Sequence):
 
-    def __init__(self, batch_size: int, training_dir: str, test_dir: str):
+    def __init__(self, img_shape, batch_size: int, training_dir: str, test_dir: str):
+        self.img_shape = img_shape;
         self.training_dir = training_dir
         self.test_dir = test_dir
         self.batch_size = batch_size
@@ -30,8 +37,13 @@ class ImageDataFeeder(Sequence):
         return X_batch, X_batch
 
     def __to_data_matrix(self, dir_name, file_names):
-        data = np.array([imread(os.path.join(dir_name, f)) for f in file_names])
-        data = data.astype('float32') / 255.
+        _logger.info("Reading %d image files into array" % len(file_names))
+
+        with Parallel(n_jobs=-1, verbose=11) as parallel:
+            data = parallel(delayed(load_img)((os.path.join(dir_name, f)), self.img_shape) for f in file_names)
+            data = np.array(data).astype('float32') / 255.
+            _logger.info("Loaded a data of shape {}".format(data.shape))
+
         return data
 
     def __generate_epoch(self):
