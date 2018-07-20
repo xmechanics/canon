@@ -1,5 +1,4 @@
 import os
-import time
 import logging
 import keras
 from keras.callbacks import TensorBoard, EarlyStopping
