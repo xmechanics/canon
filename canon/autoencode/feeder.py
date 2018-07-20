@@ -10,7 +10,8 @@ _logger = logging.getLogger(__name__)
 
 
 def load_img(f, shape):
-    return resize(imread(f), shape, mode='reflect')
+    img = resize(imread(f), shape, mode='reflect').astype('float32')
+    return img / img.max()
 
 
 class ImageDataFeeder(Sequence):
@@ -41,14 +42,13 @@ class ImageDataFeeder(Sequence):
 
         with Parallel(n_jobs=-1, verbose=11) as parallel:
             data = parallel(delayed(load_img)((os.path.join(dir_name, f)), self.img_shape) for f in file_names)
-            data = np.array(data).astype('float32') / 255.
-            _logger.info("Loaded a data of shape {}".format(data.shape))
-
+            data = np.array(data)
+            _logger.info("Loaded a data of shape {}: max={}, min={}".format(data.shape, data.max(), data.min()))
         return data
 
     def __generate_epoch(self):
         epoch_files = np.random.choice(self.training_files, self.epoch_size * self.batch_size)
-        self.X_epoch = self.__to_data_matrix(epoch_files)
+        self.X_epoch = self.__to_data_matrix(self.training_dir,  epoch_files)
 
     # noinspection PyNoneFunctionAssignment
     def on_epoch_end(self):
