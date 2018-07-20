@@ -67,7 +67,7 @@ def process_images(file_paths, output_dir):
         reader.remove_background()
         reader.normalize()
         data = reader.image()
-        data = resize(data, (128, 128), mode='reflect')
+        # data = resize(data, (128, 128), mode='reflect')
         img = Image.fromarray(data.astype(np.uint8))
         img.save(os.path.join(output_dir, jpg))
 
@@ -88,24 +88,22 @@ if __name__ == '__main__':
     from canon.common.init import init_mpi_logging
     init_mpi_logging("logging_mpi.yaml")
 
-    # process_images(["img/test/test00001.tiff"], "img/test")
+    file_names = []
+    if MPI_RANK == 0:
+        # existing_names = get_existing_names(["img/test_981"])
+        existing_names = []
+        file_names = get_file_names("/Volumes/G-DRIVE/test_tiff", sample_rate=1, existing_names=existing_names)
+    process_images(file_names, "img/test_processed")
 
-    # file_names = []
-    # if MPI_RANK == 0:
-    #     existing_names = get_existing_names(["img/test_128"])
-    #     file_names = get_file_names("/Volumes/G-DRIVE/xmax_tiff", sample_rate=0.25, existing_names=existing_names)
-    #
-    # process_images(file_names, "img/processed")
-
-    # process_images(["img/test/test00001.tiff"], "img/test")
-    reader = canon.TiffReader(canon.TiffReader.PILATUS)
-    reader.loadtiff("img/test/test00001.tiff")
-    reader.remove_background()
-    reader.normalize()
-    img = reader.image()
-    img = resize(img, (128, 128), mode='reflect')
-    img = Image.fromarray(img.astype(np.uint8))
-    img.save(os.path.join("img/test", "test00001.jpg"))
+    # process_images(["img/test/NiTi_30C_00001.tif"], "img/test")
+    # reader = canon.TiffReader(canon.TiffReader.PILATUS)
+    # reader.loadtiff("img/test/test00001.tiff")
+    # reader.remove_background()
+    # reader.normalize()
+    # img = reader.image()
+    # # img = resize(img, (128, 128), mode='reflect')
+    # img = Image.fromarray(img.astype(np.uint8))
+    # img.save(os.path.join("img/test", "test00001.jpg"))
 
 
 

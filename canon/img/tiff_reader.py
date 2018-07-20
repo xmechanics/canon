@@ -42,11 +42,12 @@ class TiffReader:
         self.__reader.fill_black(self.__image)
         self.__image = subtract(self.__image, cutoff)
 
-    def normalize(self):
+    def normalize(self, imin=2000, imax=10000):
         img = self.__image
-        flatten = np.array(img.reshape(np.prod(img.shape))).clip(2000, 10000) - 2000
+        flatten = np.array(img.reshape(np.prod(img.shape)))
+        flatten=flatten.clip(imin, imax) - imin
         flatten = np.log1p(flatten)
-        flatten = 225 * flatten / flatten.max()
+        flatten = 225. * flatten / np.log1p(imax - imin)
         img = flatten.reshape(img.shape)
         self.__image = img[:981, :]
 
