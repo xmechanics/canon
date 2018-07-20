@@ -7,12 +7,25 @@ def subtract(image, cutoff):
     assert cutoff < 1
 
     bg = __extract_bg(image, cutoff)
+    img2 = image - bg
+    ratio = np.where(img2 > 0)[0].sum() / np.where(image > 0)[0].sum()
+    while ratio < 1e-3:
+        cutoff = cutoff * 2
+        bg = __extract_bg(image, cutoff)
+        img2 = image - bg
+        ratio = np.where(img2 > 0)[0].sum() / np.where(image > 0)[0].sum()
 
-    return image - bg
+    #print(bg.max(), image.max(), img2.mean(), image.mean(), np.where(img2 > 0)[0].sum(), np.where(image > 0)[0].sum())
+    # print(img2.mean() / image.mean(), np.where(img2 > 0)[0].sum() / np.where(image > 0)[0].sum())
+    # while bg.max() >= 0.5*image.max():
+    #     cutoff = cutoff * 2
+    #     bg = __extract_bg(image, cutoff)
+
+    return img2
 
 
 def __extract_bg(img, cutoff):
-    hist, bins = exposure.histogram(img, nbins=10000)
+    hist, bins = exposure.histogram(img, nbins=100000)
     histcuftoff = np.max(hist) * cutoff
     bg_min, bg_max = np.inf, 0
 

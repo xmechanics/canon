@@ -67,7 +67,9 @@ def process_images(file_paths, output_dir):
         reader.remove_background()
         reader.normalize()
         data = reader.image()
-        # data = resize(data, (128, 128), mode='reflect')
+        if np.median(data) > 0 or np.mean(data) < 1e-3:
+            print(jpg, np.median(data), np.max(data), np.mean(data))
+            # continue
         img = Image.fromarray(data.astype(np.uint8))
         img.save(os.path.join(output_dir, jpg))
 
@@ -90,14 +92,14 @@ if __name__ == '__main__':
 
     file_names = []
     if MPI_RANK == 0:
-        # existing_names = get_existing_names(["img/test_981"])
-        existing_names = []
-        file_names = get_file_names("/Volumes/G-DRIVE/test_tiff", sample_rate=1, existing_names=existing_names)
-    process_images(file_names, "img/test_processed")
+        existing_names = get_existing_names(["img/test_981"])
+        # existing_names = []
+        file_names = get_file_names("/Volumes/G-DRIVE/xmax_tiff", sample_rate=0.25, existing_names=existing_names)
+    process_images(file_names, "img/processed")
 
-    # process_images(["img/test/NiTi_30C_00001.tif"], "img/test")
+    # process_images(["img/test/au29_m1.tif"], "img/test")
     # reader = canon.TiffReader(canon.TiffReader.PILATUS)
-    # reader.loadtiff("img/test/test00001.tiff")
+    # reader.loadtiff("img/test/NiTi_30C_00672.tif")
     # reader.remove_background()
     # reader.normalize()
     # img = reader.image()

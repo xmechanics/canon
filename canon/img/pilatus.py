@@ -16,6 +16,18 @@ class Pilatus:
         gap_centers = (202 + 212 * i for i in range(4))
         map(lambda c: Pilatus.__fill_horizontal_stripe(image, c), gap_centers)
         Pilatus.__fill_middle_stripe(image)
+        image[193, :] = image[192, :]
+        image[194, :] = image[193, :]
+        image[213, :] = image[214, :]
+        image[212, :] = image[213, :]
+        image[405, :] = image[404, :]
+        image[406, :] = image[405, :]
+        image[425, :] = image[426, :]
+        image[424, :] = image[425, :]
+        image[617, :] = image[616, :]
+        image[618, :] = image[617, :]
+        image[637, :] = image[638, :]
+        image[636, :] = image[637, :]
 
     @staticmethod
     def __fill_horizontal_stripe(image, xcenter):
