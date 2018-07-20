@@ -38,26 +38,21 @@ class TiffReader:
     def image(self):
         return self.__image.copy()
 
-    def remove_background(self, cutoff=0.001):
+    def remove_background(self, cutoff=0.0001):
         self.__reader.fill_black(self.__image)
         self.__image = subtract(self.__image, cutoff)
 
     def normalize(self):
         img = self.__image
-        flatten = np.array(img.reshape(np.prod(img.shape))).clip(2000, 10000) - 2000
-        flatten = np.log1p(flatten)
-        flatten = 225 * flatten / flatten.max()
-        img = flatten.reshape(img.shape)
-        self.__image = img[:981, :]
-
-    def normalize_bk(self, cutoff=80):
-        img = self.__image
-        flat = img.reshape(img.shape[0] * img.shape[1])
-        high = np.percentile(flat[np.where(flat > 0)], cutoff)
-        img2 = np.zeros(img.shape)
+        flatten = np.array(img.reshape(np.prod(img.shape))).clip(0, img.max())
+        low = np.percentile(flatten[np.where(flatten > 0)], 30)
+        high = np.percentile(flatten[np.where(flatten > 0)], 70)
+        flatten = flatten.clip(low, flatten.max()) - low
+        img2 = flatten.reshape(img.shape)
         img2[np.where(img > high)] = 90. + 10. * (img[np.where(img > high)] - high) / (img.max() - high)
-        img2[np.where(img <= high)] = 90. * img[np.where(img <= high)] / high
-        self.__image = 2.55 * img2
+        img2[np.where(img <= high)] = 90. * img2[np.where(img <= high)] / high
+        img2 = 2.25 * img2
+        self.__image = img2[:981, :]
 
     def find_peaks(self, npeaks=float('inf')):
         assert npeaks == float('inf') or isinstance(npeaks, int)
