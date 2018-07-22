@@ -60,7 +60,7 @@ def train(architecture, run_number, training_dir, test_dir, epochs=10000, verbos
 
     callbacks = [TensorBoard(log_dir="logs/{}".format(run_number)),
                  ModelSaveCallback(checkpoint_dir + "/autoencoder.{0:03d}.hdf5"),
-                 EarlyStopping(min_delta=1e-4, patience=10)]
+                 EarlyStopping(patience=10, mode='min')]
 
     autoencoder.fit(X_train, X_train,
                     epochs=epochs,
