@@ -1,6 +1,7 @@
 import logging
 import os
 import numpy as np
+from skimage.transform import resize
 from keras.models import model_from_json
 
 from canon.pattern.feature_extractor import FeaturesExtractor
@@ -39,7 +40,10 @@ class LatentExtractor(FeaturesExtractor):
         _logger.info("Loaded an encoder with %d features" % (self.n_features()))
 
     def features(self, img_data, skip_normalize=True):
-        img_data = img_data.astype("float32") / 255.
+        if not np.all(np.equal(img_data.shape[1:], self.__input_shape)):
+            img_data = [resize(img, self.__input_shape, mode='reflect') for img in img_data]
+        img_data = img_data.astype('float32')
+        img_data = np.array([img > 0.2 * img.max() for img in img_data])
         return self.__encoder.predict(img_data)
 
     def get_encoder(self):

@@ -6,6 +6,10 @@ from itertools import groupby
 from mpi4py import MPI
 import numpy as np
 
+import matplotlib.pyplot as plt
+import matplotlib
+from matplotlib import rcParams
+
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
@@ -22,52 +26,16 @@ from canon.pattern.labeler import SeqLabeler
 from canon.util import split_workload
 from canon.mpi import extract_sample_features, score_dir
 
-from plotseq import plot_seq
 
-
-read_file = read_dats
-
-
-def relabel(labeler, scoreinds):
-    t0 = timer()
-    # split scores into groups by label
-    if MPI_RANK == 0:
-        groups = []
-        for k, g in groupby(sorted(scoreinds, key=lambda si: si[0][0]), key=lambda si: si[0][0]):
-            groups.append(list(g))
-        sub_groups = split_workload(sorted(groups, key=len), MPI_COMM.size)
-    else:
-        sub_groups = 0
-    sub_groups = MPI_COMM.scatter(sub_groups, root=0)
-    _logger.info('Got %d [local] groups of scores to re-label, which is %d in total.' %
-                  (len(sub_groups), sum(map(len, sub_groups))))
-
-    new_scoreinds_loc = relabel_score_groups(labeler, sub_groups)
-    new_scoreinds_stack = MPI_COMM.gather(new_scoreinds_loc, root=0)
-    if MPI_RANK == 0:
-        new_scoreinds = sum(new_scoreinds_stack, [])
-        _logger.info('Re-labeled %d scores. %g sec' % (len(new_scoreinds), timer() - t0))
-        return new_scoreinds
-
-
-def relabel_score_groups(labeler, groups):
-    t0 = timer()
-    new_scoreinds = []
-    for scoreinds in groups:
-        scoreinds = [si for si in scoreinds if si[0] is not None]
-        scoreinds = sorted(scoreinds, key=lambda si: si[0][1], reverse=True)
-        weighted_scores = []
-        for si in scoreinds[:min(len(scoreinds), 1000)]:
-            score = labeler.evaluate(si[1])
-            if score is not None:
-                weighted_scores.append((score, si[0][1]))
-        centroid_score = np.sum([s * w for s, w in weighted_scores])/np.sum([w for _, w in weighted_scores]) \
-            if len(weighted_scores) > 0 else None
-        new_scoreinds += [(centroid_score, si[1]) for si in scoreinds]
-        if centroid_score is None:
-            _logger.warning('%d scores in cluster %d are re-labeled to [None]!' % (len(scoreinds), scoreinds[0][0][0]))
-    _logger.info('Re-labeled %d [local] scores. %g sec' % (sum(map(len, groups)), timer() - t0))
-    return new_scoreinds
+def plot_seq(ax, Z, step, colormap='gist_ncar', filename='untitled'):
+    x_step = step[0]
+    y_step = step[1]
+    ax.set_ylabel(r'Y ({:d} $\mu$m/px)'.format(y_step))
+    ax.set_xlabel(r'X ({:d} $\mu$m/px)'.format(x_step))
+    cmap = plt.get_cmap(colormap)
+    cmap.set_bad(color='k', alpha=None)
+    Z_mask = np.ma.array(Z, mask=np.isnan(Z))
+    ax.imshow(Z[::-1, ::], interpolation='none', cmap=cmap, aspect=y_step / x_step, vmin=np.min(Z_mask), vmax=np.max(Z_mask))
 
 
 if __name__ == '__main__':
@@ -97,18 +65,28 @@ if __name__ == '__main__':
     # NY = 80
     # sample_rate = 1.0
 
-    tiff_dir = os.path.join(scratch, "img", "ZrO2_770C_wb1_processed")
+    tiff_dir = os.path.join(scratch, "img", "BTO_25C_wb3_processed")
     seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
-    NX = 110
-    NY = 80
+    NX = 100
+    NY = 60
     sample_rate = 1.0
+
+    # tiff_dir = os.path.join(scratch, "img", "ZrO2_770C_wb1_processed")
+    # seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
+    # NX = 110
+    # NY = 80
+    # sample_rate = 1.0
 
     step = (5, 5)
     training_set = extract_sample_features(extractor, tiff_dir, sample_rate=sample_rate)    # sample_patterns on lives on core-0
 
     if MPI_RANK == 0:
         model = BGMModel()
-        model.train(np.array(training_set), preprocessors=[StandardScaler(), PCA(whiten=True)])
+        training_set = np.array(training_set)
+        model.train(training_set, n_clusters=6, preprocessors=[])
+        silhouette = model.compute_silhouette_score(training_set)
+        calinski = model.compute_calinski_harabaz_score(training_set)
+        _logger.info("Silhouette Score = {}, Calinski-Harabaz Score = {}".format(silhouette, calinski))
     else:
         model = None
     model = MPI_COMM.bcast(model, root=0)
@@ -127,21 +105,35 @@ if __name__ == '__main__':
         Z = np.empty([NY, NX])
         Z[:] = np.nan
         for score, idx in score_inds:
+            ix, iy = idx2XY(idx, NX)
             if score is not None:
-                ix, iy = idx2XY(idx, NX)
                 if ix < NY:
                     if isinstance(score, tuple) or isinstance(score, list) or isinstance(score, np.ndarray):
                         Z[ix, iy] = score[0]
                     else:
                         Z[ix, iy] = score
+                    if Z[ix, iy] is None:
+                        print("{}, {}, Found None".format(ix, iy))
+            if Z[ix, iy] == np.nan:
+                print("{}, {}, Found nan".format(ix, iy))
         _logger.info('Z matrix has %d nans' % sum(1 for row in Z for z in row if np.isnan(z)))
         np.savetxt(z_file, Z)
         _logger.info('Write Z matrix into ' + z_file + ' in ' + os.path.dirname(os.path.abspath(__file__)))
 
     # Visualization
     if MPI_RANK == 0:
+        rcParams['font.size'] = 10
+        rcParams['font.family'] = 'serif'
+        rcParams['font.sans-serif'] = ['Times New Roman']
+        fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(5, 4))
+
+        # fig = plt.figure(figsize=(4, 3), dpi=150)
+        # gs = matplotlib.gridspec.GridSpec(1, 1)
+        # plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
+
         Z = np.loadtxt(z_file)
         scaler = model.get_label_scaler()
-        plot_seq(scaler(Z), step, colormap='jet', filename=os.path.join(scratch, "img", z_plot))
-
+        plot_seq(ax, scaler(Z), step, colormap='jet', filename=os.path.join(scratch, "img", z_plot))
+        # plt.tight_layout()
+        fig.savefig("img/Z.pdf", bbox_inches='tight', dpi=300)
 

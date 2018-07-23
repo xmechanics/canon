@@ -5,6 +5,7 @@ from sklearn.mixture import GaussianMixture, BayesianGaussianMixture
 from sklearn.cluster import KMeans, DBSCAN, MeanShift, estimate_bandwidth
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+from sklearn.metrics import silhouette_score, calinski_harabaz_score
 
 _logger = logging.getLogger(__name__)
 
@@ -28,6 +29,12 @@ class Model:
         sorter = np.argsort(transformed_labels)
         return np.vectorize(lambda z: (sorter[int(z)] if z >= 0 else np.nan))
 
+    def compute_silhouette_score(self, data):
+        return silhouette_score(data, self._estimator.predict(data))
+
+    def compute_calinski_harabaz_score(self, data):
+        return calinski_harabaz_score(data, self._estimator.predict(data))
+
     def train(self, data, preprocessors=None, n_clusters=None):
         n_patterns = len(data)
         n_features = len(data[0])
@@ -39,6 +46,8 @@ class Model:
             preprocessors = [StandardScaler()]
         for preprocessor in preprocessors:
             data = preprocessor.fit_transform(data)
+            if isinstance(preprocessor, PCA):
+                print(preprocessor.explained_variance_ratio_)
         self.__preprocessors = preprocessors
 
         n_features = len(data[0])
@@ -149,10 +158,7 @@ class KMeansModel(Model):
                      (len(samples), n_features, n_clusters))
         estimator = KMeans(n_clusters=n_clusters, n_init=init)
         estimator.fit(samples)
-        # estimator.fit_transform(samples)
-        # estimator.fit_predict(samples)
         self._centroids = estimator.cluster_centers_
-        # self._inertia = estimator.inertia_
         _logger.info('Finished KMeans on %d samples using %d features for %d clusters. %.3f sec.' %
                      (len(samples), n_features, n_clusters, timer() - t_start))
         return estimator, n_clusters
@@ -175,7 +181,7 @@ class GMModel(IterativeModel):
         n_features = len(samples[0])
         _logger.info('Running GaussianMixture on %d patterns using %d features for %d clusters ...' %
                      (len(samples), n_features, n_clusters))
-        estimator = GaussianMixture(n_components=n_clusters)
+        estimator = GaussianMixture(n_components=n_clusters, random_state=4)
         estimator.fit(samples)
         _logger.info('Finished GaussianMixture on %d patterns using %d features for %d clusters. %.3f sec. AIC = %g' %
                      (len(samples), n_features, n_clusters, timer() - t_start,

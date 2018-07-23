@@ -60,8 +60,7 @@ def score_batch(extractor, model, filenames):
     indices = [int(f[-9:-4]) for f in filenames]
     img_data = np.array([imread(f) for f in filenames])
     scores = model.score(extractor.features(img_data))
-    _logger.info('Scored a batch of %d [local] patterns, %d are [None]. %g sec'
-                  % (len(filenames), sum(1 for s in scores if s is None), timer() - t0))
-
-    return [(s, i) for (s, i) in zip(scores, indices) if s is not None]
-
+    scoreinds = [(s, i) for (s, i) in zip(scores, indices) if s is not None]
+    _logger.info('Scored a batch of %d [local] patterns from %d files, %d are [None]. %g sec'
+                  % (len(scoreinds), len(filenames), sum(1 for s in scores if s is None), timer() - t0))
+    return scoreinds
