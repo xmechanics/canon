@@ -11,7 +11,7 @@ _logger = logging.getLogger(__name__)
 
 def load_img(f, shape):
     img = resize(imread(f), shape, mode='reflect').astype('float32')
-    return (img > 0.2 * img.max()).astype('float32')
+    return img / img.max()
 
 
 class ImageDataFeeder(Sequence):
