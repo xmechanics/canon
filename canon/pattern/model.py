@@ -3,7 +3,7 @@ import logging
 from timeit import default_timer as timer
 from sklearn.mixture import GaussianMixture, BayesianGaussianMixture
 from sklearn.cluster import KMeans, DBSCAN, MeanShift, estimate_bandwidth
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, normalize
 from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score, calinski_harabaz_score
 
@@ -18,16 +18,20 @@ class Model:
         self.__preprocessors = []
         self._estimator = None
         self._n_features_transformed = None
+        self.__pca = PCA(n_components=3)
+        self.__pca_range = None
 
     def centroids(self):
         raise NotImplementedError
 
-    def get_label_scaler(self):
+    def get_label_scaler(self, dim):
         centroids = self.centroids()[:]
-        transformed_centroids = PCA().fit_transform(centroids)
-        transformed_labels = transformed_centroids[:, 0]
-        sorter = np.argsort(transformed_labels)
-        return np.vectorize(lambda z: (sorter[int(z)] if z >= 0 else np.nan))
+        transformed_centroids = self.__pca.transform(centroids)
+        # transformed_labels = transformed_centroids[:, 0]
+        # sorter = np.argsort(transformed_labels)
+        centroids_rgb = (transformed_centroids - self.__pca_range[0]) / (self.__pca_range[1] - self.__pca_range[0])
+        centroids_rgb = normalize(centroids_rgb, axis=1)
+        return np.vectorize(lambda z: (centroids_rgb[int(z), dim] if z >= 0 else [np.nan, np.nan, np.nan]))
 
     def compute_silhouette_score(self, data):
         return silhouette_score(data, self._estimator.predict(data))
@@ -39,6 +43,10 @@ class Model:
         n_patterns = len(data)
         n_features = len(data[0])
         self.__n_features = n_features
+
+        data_pca = self.__pca.fit_transform(data)
+        self.__pca_range = [data_pca.min(axis=0), data_pca.max(axis=0)]
+        print(self.__pca_range[0].shape, self.__pca_range[1].shape)
 
         t_start = timer()
         _logger.info('Pre-processing %d patterns with %d features ...' % (n_patterns, n_features))

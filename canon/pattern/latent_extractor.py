@@ -41,9 +41,8 @@ class LatentExtractor(FeaturesExtractor):
 
     def features(self, img_data, skip_normalize=True):
         if not np.all(np.equal(img_data.shape[1:], self.__input_shape)):
-            img_data = [resize(img, self.__input_shape, mode='reflect') for img in img_data]
-        img_data = img_data.astype('float32')
-        img_data = np.array([img > 0.2 * img.max() for img in img_data])
+            img_data = [resize(img, self.__input_shape, mode='reflect').astype('float32') for img in img_data]
+        img_data = np.array([img/img.max() for img in img_data]).astype('float32')
         return self.__encoder.predict(img_data)
 
     def get_encoder(self):

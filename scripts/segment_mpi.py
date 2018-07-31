@@ -35,7 +35,9 @@ def plot_seq(ax, Z, step, colormap='gist_ncar', filename='untitled'):
     cmap = plt.get_cmap(colormap)
     cmap.set_bad(color='k', alpha=None)
     Z_mask = np.ma.array(Z, mask=np.isnan(Z))
-    ax.imshow(Z[::-1, ::], interpolation='none', cmap=cmap, aspect=y_step / x_step, vmin=np.min(Z_mask), vmax=np.max(Z_mask))
+    # ax.imshow(Z[::-1, ::], interpolation='none', cmap=cmap, aspect=y_step / x_step, vmin=np.min(Z_mask), vmax=np.max(Z_mask))
+    print(Z.shape)
+    ax.imshow(Z[::-1, :, :], aspect=y_step / x_step)
 
 
 if __name__ == '__main__':
@@ -43,7 +45,7 @@ if __name__ == '__main__':
     init_mpi_logging("logging_mpi.yaml")
 
     extractor1 = PeakNumberExtractor()
-    extractor2 = LatentExtractor("ae_128_256_conv_4_dense_1")
+    extractor2 = LatentExtractor("ae_128_256_conv_4")
     extractor = CombinedExtractor([extractor1, extractor2])
     extractor = extractor2
 
@@ -65,10 +67,22 @@ if __name__ == '__main__':
     # NY = 80
     # sample_rate = 1.0
 
-    tiff_dir = os.path.join(scratch, "img", "BTO_25C_wb3_processed")
+    # tiff_dir = os.path.join(scratch, "img", "BTO_25C_wb3_processed")
+    # seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
+    # NX = 100
+    # NY = 60
+    # sample_rate = 1.0
+
+    # tiff_dir = os.path.join(scratch, "img", "C_2_1_mscan1")
+    # seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
+    # NX = 60
+    # NY = 59
+    # sample_rate = 1.0
+
+    tiff_dir = os.path.join(scratch, "img", "C_5_1_2_scan1")
     seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
-    NX = 100
-    NY = 60
+    NX = 30
+    NY = 30
     sample_rate = 1.0
 
     # tiff_dir = os.path.join(scratch, "img", "ZrO2_770C_wb1_processed")
@@ -83,7 +97,7 @@ if __name__ == '__main__':
     if MPI_RANK == 0:
         model = BGMModel()
         training_set = np.array(training_set)
-        model.train(training_set, n_clusters=6, preprocessors=[])
+        model.train(training_set, n_clusters=4, preprocessors=[])
         silhouette = model.compute_silhouette_score(training_set)
         calinski = model.compute_calinski_harabaz_score(training_set)
         _logger.info("Silhouette Score = {}, Calinski-Harabaz Score = {}".format(silhouette, calinski))
@@ -114,8 +128,8 @@ if __name__ == '__main__':
                         Z[ix, iy] = score
                     if Z[ix, iy] is None:
                         print("{}, {}, Found None".format(ix, iy))
-            if Z[ix, iy] == np.nan:
-                print("{}, {}, Found nan".format(ix, iy))
+            # if Z[ix, iy] == np.nan:
+            #     print("{}, {}, Found nan".format(ix, iy))
         _logger.info('Z matrix has %d nans' % sum(1 for row in Z for z in row if np.isnan(z)))
         np.savetxt(z_file, Z)
         _logger.info('Write Z matrix into ' + z_file + ' in ' + os.path.dirname(os.path.abspath(__file__)))
@@ -132,8 +146,14 @@ if __name__ == '__main__':
         # plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
 
         Z = np.loadtxt(z_file)
-        scaler = model.get_label_scaler()
-        plot_seq(ax, scaler(Z), step, colormap='jet', filename=os.path.join(scratch, "img", z_plot))
+        scaler0 = model.get_label_scaler(0)
+        scaler1 = model.get_label_scaler(1)
+        scaler2 = model.get_label_scaler(2)
+        Z2 = np.zeros((Z.shape[0], Z.shape[1], 3))
+        Z2[:, :, 0] = scaler0(Z)
+        Z2[:, :, 1] = scaler1(Z)
+        Z2[:, :, 2] = scaler2(Z)
+        plot_seq(ax, Z2, step, colormap='jet', filename=os.path.join(scratch, "img", z_plot))
         # plt.tight_layout()
         fig.savefig("img/Z.pdf", bbox_inches='tight', dpi=300)
 

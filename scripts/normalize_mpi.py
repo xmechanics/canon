@@ -36,7 +36,7 @@ def get_file_names(img_dir, sample_rate=0.1, existing_names=set()):
         path = os.path.join(img_dir, filename)
         if os.path.isdir(path):
             files_in_subdir += get_file_names(path, sample_rate=sample_rate, existing_names=existing_names)
-        elif np.random.rand(1) <= sample_rate:
+        elif np.random.rand(1) <= sample_rate and filename[-1]=='f':
             file_names.append(os.path.join(img_dir, filename))
     file_names = [f for f in file_names if to_jpg_name(f) not in existing_names]
     file_names = file_names + files_in_subdir
@@ -92,10 +92,10 @@ if __name__ == '__main__':
 
     file_names = []
     if MPI_RANK == 0:
-        existing_names = get_existing_names(["img/test_981"])
-        # existing_names = []
-        file_names = get_file_names("/Volumes/G-DRIVE/xmax_tiff", sample_rate=0.25, existing_names=existing_names)
-    process_images(file_names, "img/processed")
+        # existing_names = get_existing_names(["img/test_981"])
+        existing_names = []
+        file_names = get_file_names("/Volumes/LaCie/scratch/sherry_Dec2017/C_5_1_2_scan1", sample_rate=1, existing_names=existing_names)
+    process_images(file_names, "img/C_5_1_2_scan1")
 
     # process_images(["img/test/au29_m1.tif"], "img/test")
     # reader = canon.TiffReader(canon.TiffReader.PILATUS)
