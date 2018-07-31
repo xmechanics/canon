@@ -79,11 +79,17 @@ if __name__ == '__main__':
     # NY = 59
     # sample_rate = 1.0
 
-    tiff_dir = os.path.join(scratch, "img", "C_5_1_2_scan1")
+    tiff_dir = os.path.join(scratch, "img", "au30_mart4_fine")
     seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
-    NX = 30
-    NY = 30
+    NX = 100
+    NY = 25
     sample_rate = 1.0
+
+    # tiff_dir = os.path.join(scratch, "img", "C_4_2_scan1")
+    # seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
+    # NX = 40
+    # NY = 20
+    # sample_rate = 1.0
 
     # tiff_dir = os.path.join(scratch, "img", "ZrO2_770C_wb1_processed")
     # seq_files = [os.path.join(scratch, "seq", "CuAlNi_mart2_.SEQ")]
@@ -91,13 +97,14 @@ if __name__ == '__main__':
     # NY = 80
     # sample_rate = 1.0
 
-    step = (5, 5)
+    step = (4, 10)
+    # step = (5, 5)
     training_set = extract_sample_features(extractor, tiff_dir, sample_rate=sample_rate)    # sample_patterns on lives on core-0
 
     if MPI_RANK == 0:
         model = BGMModel()
         training_set = np.array(training_set)
-        model.train(training_set, n_clusters=4, preprocessors=[])
+        model.train(training_set, n_clusters=200, preprocessors=[])
         silhouette = model.compute_silhouette_score(training_set)
         calinski = model.compute_calinski_harabaz_score(training_set)
         _logger.info("Silhouette Score = {}, Calinski-Harabaz Score = {}".format(silhouette, calinski))
