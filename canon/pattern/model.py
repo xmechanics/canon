@@ -33,6 +33,14 @@ class Model:
         centroids_rgb = normalize(centroids_rgb, axis=1)
         return np.vectorize(lambda z: (centroids_rgb[int(z), dim] if z >= 0 else [np.nan, np.nan, np.nan]))
 
+    def coloring(self, Z):
+        centroids = self.centroids()[:]
+        transformed_centroids = self.__pca.transform(centroids)
+        centroids_rgb = (transformed_centroids - self.__pca_range[0]) / (self.__pca_range[1] - self.__pca_range[0])
+        rgb = np.zeros((Z.shape[0], Z.shape[1], 3))
+        rgb[np.where(Z >= 0)] = centroids_rgb[Z[np.where(Z >= 0)]]
+        return rgb
+
     def compute_silhouette_score(self, data):
         return silhouette_score(data, self._estimator.predict(data))
 
@@ -46,7 +54,6 @@ class Model:
 
         data_pca = self.__pca.fit_transform(data)
         self.__pca_range = [data_pca.min(axis=0), data_pca.max(axis=0)]
-        print(self.__pca_range[0].shape, self.__pca_range[1].shape)
 
         t_start = timer()
         _logger.info('Pre-processing %d patterns with %d features ...' % (n_patterns, n_features))
@@ -207,7 +214,7 @@ class GMModel(IterativeModel):
         for i, p in enumerate(probs):
             max_p = np.max(p)
             if max_p >= self.__min_prob:
-                labels[i] = (np.argmax(p), max_p)
+                labels[i] = np.argmax(p)
         return labels
 
 
@@ -248,7 +255,8 @@ class BGMModel(IterativeModel):
         for i, p in enumerate(probs):
             max_p = np.max(p)
             if max_p >= self.__min_prob:
-                labels[i] = (np.argmax(p), max_p)
+                # labels[i] = (np.argmax(p), max_p)
+                labels[i] = np.argmax(p)
         return labels
 
 
