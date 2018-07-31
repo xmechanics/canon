@@ -4,5 +4,6 @@ seq/
 checkpoints/
 models/
 logs/
+features/
 *.log
 .ipynb_checkpoints
