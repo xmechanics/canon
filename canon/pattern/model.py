@@ -30,8 +30,8 @@ class Model:
         # transformed_labels = transformed_centroids[:, 0]
         # sorter = np.argsort(transformed_labels)
         centroids_rgb = (transformed_centroids - self.__pca_range[0]) / (self.__pca_range[1] - self.__pca_range[0])
-        # centroids_rgb = normalize(centroids_rgb, axis=1)
-        return np.vectorize(lambda z: (centroids_rgb[int(z), dim] if z >= 0 else 0))
+        centroids_rgb = normalize(centroids_rgb, axis=1)
+        return np.vectorize(lambda z: (centroids_rgb[int(z), dim] if z >= 0 else [np.nan, np.nan, np.nan]))
 
     def coloring(self, Z):
         centroids = self.centroids()[:]
