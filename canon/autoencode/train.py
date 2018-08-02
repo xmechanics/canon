@@ -51,7 +51,7 @@ def train(architecture, n_features, training_dir, test_dir, epochs=1000, verbose
     feeder = ImageDataFeeder(img_shape, batch_size=batch_size, training_dir=training_dir, test_dir=test_dir)
     X_test = feeder.get_test_set()
     X_train = feeder.get_training_set()
-    checkpoint_dir = "checkpoints/{}/{}".format(architecture, n_features)
+    checkpoint_dir = "checkpoints/{}/{}".format(architecture.lower(), n_features)
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
@@ -70,7 +70,7 @@ def train(architecture, n_features, training_dir, test_dir, epochs=1000, verbose
 
 
 def find_checkpoint(architecture, n_features):
-    checkpoint_dir = "checkpoints/{}/{}".format(architecture, n_features)
+    checkpoint_dir = "checkpoints/{}/{}".format(architecture.lower(), n_features)
     if os.path.exists(checkpoint_dir):
         fns = os.listdir(checkpoint_dir)
         if len(fns) >= 1:
