@@ -57,7 +57,7 @@ def train(architecture, run_number, training_dir, test_dir, epochs=10000, verbos
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
-    callbacks = [TensorBoard(log_dir="logs/{}".format(run_number)),
+    callbacks = [TensorBoard(log_dir="logs/{}_{}".format(architecture.lower(), run_number)),
                  ModelSaveCallback(checkpoint_dir + "/autoencoder.{0:03d}.hdf5"),
                  EarlyStopping(patience=10, mode='min')]
 

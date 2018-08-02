@@ -5,7 +5,8 @@ import numpy as np
 AE_128_to_1024 = "AE_128_to_1024"
 AE_128_to_256 = "AE_128_to_256"
 AE_128_to_64 = "AE_128_to_64"
-
+AE_128_to_32 = "AE_128_to_32"
+AE_128_to_4 = "AE_128_to_4"
 
 def compile_autoencoder(encoder, decoder):
     IMAGE_SHAPE =(128, 128)
@@ -24,10 +25,62 @@ def build(model_name: str):
         return build_to_1024((128, 128))
     elif model_name == AE_128_to_256:
         return build_to_256((128, 128))
-    elif model_name == AE_128_to_64:
-        return build_to_64((128, 128))
+    elif model_name == AE_128_to_32:
+        return conv_4((128, 128), 32)
+    elif model_name == AE_128_to_4:
+        return conv_4((128, 128), 4)
     else:
         raise Exception("Unknown model name " + model_name)
+
+
+def conv_4(img_shape, n=4):
+    H, W = img_shape
+
+    # encoder
+    encoder = keras.models.Sequential()
+    encoder.add(L.InputLayer(img_shape))
+    encoder.add(L.Reshape((H, W, 1)))
+    encoder.add(L.Conv2D(16, kernel_size=(3, 3), activation='relu', padding='same'))
+    encoder.add(L.MaxPooling2D(pool_size=(2, 2), padding='same'))
+    encoder.add(L.Dropout(0.2))
+    encoder.add(L.Conv2D(32, kernel_size=(3, 3), activation='relu', padding='same'))
+    encoder.add(L.MaxPooling2D(pool_size=(2, 2), padding='same'))
+    encoder.add(L.Dropout(0.2))
+    encoder.add(L.Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same'))
+    encoder.add(L.MaxPooling2D(pool_size=(2, 2), padding='same'))
+    encoder.add(L.Dropout(0.2))
+    encoder.add(L.Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same'))
+    encoder.add(L.MaxPooling2D(pool_size=(2, 2), padding='same'))
+    encoder.add(L.Dropout(0.2))
+    encoder.add(L.Conv2D(256, kernel_size=(3, 3), activation='relu', padding='same'))
+    encoder.add(L.MaxPooling2D(pool_size=(2, 2), padding='same'))
+    encoder.add(L.Dropout(0.2))
+    encoded_img_size = encoder.layers[-1].output_shape[1:]
+    encoder.add(L.Flatten())
+    encoder.add(L.Dense(n, activation='relu'))
+
+    flatten_size = np.prod(encoded_img_size)
+
+    # decoder
+    decoder = keras.models.Sequential()
+    decoder.add(L.InputLayer((n,)))
+    decoder.add(L.Dropout(0.2))
+    decoder.add(L.Dense(flatten_size, activation='relu'))
+    decoder.add(L.Reshape(encoded_img_size))
+    decoder.add(L.Dropout(0.2))
+    decoder.add(L.Conv2DTranspose(filters=128, kernel_size=(3, 3), strides=2, activation='relu', padding='same'))
+    decoder.add(L.Dropout(0.2))
+    decoder.add(L.Conv2DTranspose(filters=64, kernel_size=(3, 3), strides=2, activation='relu', padding='same'))
+    decoder.add(L.Dropout(0.2))
+    decoder.add(L.Conv2DTranspose(filters=32, kernel_size=(3, 3), strides=2, activation='relu', padding='same'))
+    decoder.add(L.Dropout(0.2))
+    decoder.add(L.Conv2DTranspose(filters=16, kernel_size=(3, 3), strides=2, activation='relu', padding='same'))
+    decoder.add(L.Dropout(0.2))
+    decoder.add(L.Conv2DTranspose(filters=1, kernel_size=(3, 3), strides=2, activation='sigmoid', padding='same'))
+    output_img_size = decoder.layers[-1].output_shape[1:-1]
+    decoder.add(L.Reshape(output_img_size))
+
+    return encoder, decoder
 
 
 def build_to_64(img_shape):
@@ -155,6 +208,6 @@ def build_to_1024(img_shape):
 if __name__ == "__main__":
     from canon.autoencode import reset_tf_session
     s = reset_tf_session()
-    encoder, decoder = build(AE_128_to_256)
+    encoder, decoder = build(AE_128_to_32)
     encoder.summary()
     decoder.summary()
