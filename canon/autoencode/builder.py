@@ -12,7 +12,7 @@ def compile_autoencoder(encoder, decoder):
     reconstruction = decoder(code)
 
     autoencoder = keras.models.Model(inputs=inp, outputs=reconstruction)
-    autoencoder.compile(optimizer="adadelta", loss='binary_crossentropy')
+    autoencoder.compile(optimizer="adamax", loss='binary_crossentropy')
 
     return autoencoder
 
