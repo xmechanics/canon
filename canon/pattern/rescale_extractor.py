@@ -16,4 +16,6 @@ class RescaleExtractor(FeaturesExtractor):
     def features(self, img_data, skip_normalize=True):
         if not np.all(np.equal(img_data.shape[1:], self.__shape)):
             img_data = [resize(img, self.__shape, mode='reflect').flatten().astype('float32') for img in img_data]
+        else:
+            img_data = [img.flatten().astype('float32') for img in img_data]
         return np.array(img_data).astype('float32')
