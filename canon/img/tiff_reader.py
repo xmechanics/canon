@@ -42,7 +42,7 @@ class TiffReader:
         self.__reader.fill_black(self.__image)
         self.__image = subtract(self.__image, cutoff)
 
-    def normalize(self, imin=2000, imax=10000):
+    def normalize(self):
         img = self.__image
         flatten = np.array(img.reshape(np.prod(img.shape))).clip(0, img.max())
         if np.where(flatten > 0)[0].shape[0] < 100:
