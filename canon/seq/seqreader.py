@@ -48,14 +48,13 @@ class SeqReader:
         NY = len(y_list)
         x_map = dict(zip(x_list, range(NX)))
         y_map = dict(zip(y_list, range(NY)))
-        Z_init = np.zeros((NY, NX))
-        N_init = np.zeros((NY, NX))
-        Z = Z_init
-        N = N_init
+        Z = np.empty((NY, NX)).astype('float32')
+        N = np.zeros((NY, NX))
+        Z[:, :] = np.nan
         for x, y, z, n in zipped_data:
             ix = x_map[x]
             iy = y_map[y]
-            if n >= thres:
+            if N[iy, ix] < n and n >=thres:
                 # if z < 0:
                 #    z += 180
                 Z[iy, ix] = z
@@ -63,7 +62,7 @@ class SeqReader:
 
         logging.debug("number of images: {:d}".format(len(imgn_list)))
         logging.debug("NX: {:d} x NY: {:d}    step size: {:d} x {:d}".format(NX, NY, x_step, y_step))
-        return np.array(Z), (x_step, y_step), np.array(N)
+        return Z, N
 
     @staticmethod
     def merge_Zmap(z1, z2, n1, n2):
@@ -89,15 +88,12 @@ class SeqReader:
 
     @staticmethod
     def __read_seq(seqfile):
-        seq = open(seqfile, 'rb')
-        numimages, = struct.unpack('i', seq.read(4))
-        result = {'numimages': numimages, 'data': []}
-
-        for i in range(numimages):
-            data = SeqReader.__read_img_data(seq)
-            result['data'].append(data)
-
-        seq.close()
+        with open(seqfile, 'rb') as seq:
+            numimages, = struct.unpack('i', seq.read(4))
+            result = {'numimages': numimages, 'data': []}
+            for i in range(numimages):
+                data = SeqReader.__read_img_data(seq)
+                result['data'].append(data)
         return result
 
     @staticmethod

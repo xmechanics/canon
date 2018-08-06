@@ -5,5 +5,6 @@ checkpoints/
 models/
 logs/
 features/
+data/
 *.log
 .ipynb_checkpoints

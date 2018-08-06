@@ -8,7 +8,7 @@ pandas
 scikit-image
 scikit-learn
 tensorflow==1.2
-Keras
+Keras==2.1.6
 joblib
 
 yaml

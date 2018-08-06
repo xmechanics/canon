@@ -17,12 +17,14 @@ def load_img(f, shape):
 class ImageDataFeeder(Sequence):
 
     def __init__(self, img_shape, batch_size: int, training_dir: str, test_dir: str):
-        self.img_shape = img_shape;
+        self.img_shape = img_shape
         self.training_dir = training_dir
         self.test_dir = test_dir
         self.batch_size = batch_size
         self.test_files = [filename for filename in os.listdir(test_dir)]
-        self.training_files = [filename for filename in os.listdir(training_dir) if filename not in set(self.test_files)]
+        self.training_files = [filename for filename in os.listdir(training_dir) if
+                               (not filename[0] == '.') and filename[-4:] == ".jpg"
+                               and (filename not in set(self.test_files))]
         _logger.info("Initialized a WhiteSequence of %d training images and %d test images" %
                      (len(self.training_files), len(self.test_files)))
         self.epoch_size = int(np.ceil(len(self.training_files) / float(self.batch_size)))

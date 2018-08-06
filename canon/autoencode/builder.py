@@ -42,9 +42,6 @@ def conv_4(img_shape, n=4):
     encoder.add(L.Dropout(0.2))
     encoder.add(L.Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same'))
     encoder.add(L.MaxPooling2D(pool_size=(2, 2), padding='same'))
-    encoder.add(L.Dropout(0.2))
-    encoder.add(L.Conv2D(256, kernel_size=(3, 3), activation='relu', padding='same'))
-    encoder.add(L.MaxPooling2D(pool_size=(2, 2), padding='same'))
     encoder.add(L.Dropout(0.5))
     encoded_img_size = encoder.layers[-1].output_shape[1:]
     encoder.add(L.Flatten())
@@ -58,8 +55,6 @@ def conv_4(img_shape, n=4):
     decoder.add(L.Dropout(0.5))
     decoder.add(L.Dense(flatten_size, activation='relu'))
     decoder.add(L.Reshape(encoded_img_size))
-    decoder.add(L.Dropout(0.2))
-    decoder.add(L.Conv2DTranspose(filters=128, kernel_size=(3, 3), strides=2, activation='relu', padding='same'))
     decoder.add(L.Dropout(0.2))
     decoder.add(L.Conv2DTranspose(filters=64, kernel_size=(3, 3), strides=2, activation='relu', padding='same'))
     decoder.add(L.Dropout(0.2))

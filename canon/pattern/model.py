@@ -3,9 +3,12 @@ import logging
 from timeit import default_timer as timer
 from sklearn.mixture import GaussianMixture, BayesianGaussianMixture
 from sklearn.cluster import KMeans, DBSCAN, MeanShift, estimate_bandwidth
-from sklearn.preprocessing import StandardScaler, normalize
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, normalize
+from sklearn.metrics.pairwise import pairwise_distances
 from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score, calinski_harabaz_score
+
+from canon.pattern.labeler import SeqLabeler
 
 _logger = logging.getLogger(__name__)
 
@@ -24,46 +27,115 @@ class Model:
     def centroids(self):
         raise NotImplementedError
 
-    def get_label_scaler(self, dim):
+    def delegates(self, features, scores=None):
+        if scores is None:
+            scores = np.array(self.score(features))
+        X = features
+        for preprocessor in self.__preprocessors:
+            X = preprocessor.transform(X)
+        delegates = []
+        for cluster, centroid in enumerate(self.centroids()):
+            idx = None
+            gidx = np.where(scores == cluster)[0]
+            if len(gidx) > 0:
+                dists = np.linalg.norm(X[gidx] - centroid, axis=1)
+                nearest = dists.argmin()
+                idx = gidx[nearest]
+            delegates.append(idx)
+        return delegates
+
+    def get_label_scaler(self, dim, scaling='samples'):
         centroids = self.centroids()[:]
-        transformed_centroids = self.__pca.transform(centroids)
-        # transformed_labels = transformed_centroids[:, 0]
-        # sorter = np.argsort(transformed_labels)
-        centroids_rgb = (transformed_centroids - self.__pca_range[0]) / (self.__pca_range[1] - self.__pca_range[0])
-        centroids_rgb = normalize(centroids_rgb, axis=1)
+        if scaling == 'samples':
+            pca = self.__pca
+            pca_range = self.__pca_range
+        elif scaling == 'centroids':
+            pca = PCA(n_components=3)
+            centroids_pca = pca.fit_transform(centroids)
+            pca_range = [centroids_pca.min(axis=0), centroids_pca.max(axis=0)]
+        else:
+            raise ValueError("Unknown scaling mode %s" % scaling)
+        transformed_centroids = pca.transform(centroids)
+        centroids_rgb = (transformed_centroids - pca_range[0]) / (pca_range[1] - pca_range[0])
+        # centroids_rgb = normalize(centroids_rgb, axis=1)
         return np.vectorize(lambda z: (centroids_rgb[int(z), dim] if z >= 0 else [np.nan, np.nan, np.nan]))
 
-    def coloring(self, Z):
-        centroids = self.centroids()[:]
-        transformed_centroids = self.__pca.transform(centroids)
-        centroids_rgb = (transformed_centroids - self.__pca_range[0]) / (self.__pca_range[1] - self.__pca_range[0])
+    def color_by_pca(self, Z, scaling='samples'):
         rgb = np.zeros((Z.shape[0], Z.shape[1], 3))
-        rgb[np.where(Z >= 0)] = centroids_rgb[Z[np.where(Z >= 0)]]
+        centroids = self.centroids()[:]
+        if centroids.shape[0] == 2:
+            sidx = centroids[:, 0].argsort()
+            blue = np.zeros(Z.shape)
+            blue[np.where(Z == sidx[0])] = 255
+            rgb[:, :, 2] = blue
+            red = np.zeros(Z.shape)
+            red[np.where(Z == sidx[1])] = 255
+            rgb[:, :, 0] = red
+        else:
+            if scaling == 'samples':
+                transformed_centroids = self.__pca.transform(centroids)
+                pca_range = self.__pca_range
+            elif scaling == 'centroids':
+                pca = PCA(n_components=3)
+                transformed_centroids = pca.fit_transform(centroids)
+                pca_range = [transformed_centroids.min(axis=0), transformed_centroids.max(axis=0)]
+            else:
+                raise ValueError("Unknown scaling mode %s" % scaling)
+            centroids_rgb = (transformed_centroids - pca_range[0]) / (pca_range[1] - pca_range[0])
+            rgb[np.where(Z >= 0)] = centroids_rgb[Z[np.where(Z >= 0)]]
         return rgb
 
+    def score_by_seqs(self, features, seqfiles, scores=None):
+        if scores is None:
+            scores = np.array(self.score(features))
+        X = features
+        for preprocessor in self.__preprocessors:
+            X = preprocessor.transform(X)
+        labler = SeqLabeler(seqfiles)
+        oridx = []
+        for cluster, centroid in enumerate(self.centroids()):
+            cval = None
+            gidx = np.where(scores == cluster)[0]
+            if len(gidx) > 0:
+                dists = np.linalg.norm(X[gidx] - centroid, axis=1)
+                near_to_far = dists.argsort()
+                for lidx in near_to_far:
+                    idx = gidx[lidx]
+                    cval = labler.evaluate(idx)
+                    if cval is not None:
+                        break
+            oridx.append(cval)
+        oridx = np.array(oridx).astype('float32')
+        img_shape = labler.img_shape()
+        return oridx[scores].reshape(img_shape)
+
     def compute_silhouette_score(self, data):
-        return silhouette_score(data, self._estimator.predict(data))
+        X = data
+        for preprocessor in self.__preprocessors:
+            X = preprocessor.transform(X)
+        return silhouette_score(data, self._estimator.predict(X))
 
     def compute_calinski_harabaz_score(self, data):
-        return calinski_harabaz_score(data, self._estimator.predict(data))
+        X = data
+        for preprocessor in self.__preprocessors:
+            X = preprocessor.transform(X)
+        return calinski_harabaz_score(data, self._estimator.predict(X))
 
     def train(self, data, preprocessors=None, n_clusters=None):
         n_patterns = len(data)
         n_features = len(data[0])
         self.__n_features = n_features
 
-        data_pca = self.__pca.fit_transform(data)
-        self.__pca_range = [data_pca.min(axis=0), data_pca.max(axis=0)]
-
         t_start = timer()
         _logger.info('Pre-processing %d patterns with %d features ...' % (n_patterns, n_features))
         if preprocessors is None:
-            preprocessors = [StandardScaler()]
+            preprocessors = []
         for preprocessor in preprocessors:
             data = preprocessor.fit_transform(data)
-            if isinstance(preprocessor, PCA):
-                print(preprocessor.explained_variance_ratio_)
         self.__preprocessors = preprocessors
+
+        data_pca = self.__pca.fit_transform(data)
+        self.__pca_range = [data_pca.min(axis=0), data_pca.max(axis=0)]
 
         n_features = len(data[0])
         self._n_features_transformed = n_features
@@ -100,6 +172,7 @@ class IterativeModel(Model):
 
     def _fit(self, samples, n_clusters=None):
         t_start = timer()
+
         iterative = False
         if n_clusters is None:
             n_clusters = min(len(samples), 256)
