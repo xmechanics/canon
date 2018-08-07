@@ -15,5 +15,5 @@ if __name__ == "__main__":
     nersc = ("IN_NERSC" in os.environ) and os.environ["IN_NERSC"] == "true"
     s = reset_tf_session(nersc=nersc)
     architecture = canon.autoencode.CONV_4
-    n_features = 128
+    n_features = 512
     train(architecture, n_features, os.path.join("img", "processed_981"), os.path.join("img", "test_981"), verbose=1, dryrun=False)
