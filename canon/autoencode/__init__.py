@@ -2,8 +2,6 @@ import os
 import tensorflow as tf
 import keras.backend as K
 
-from .builder import CONV_4
-
 
 # !!! remember to clear session/graph if you rebuild your graph to avoid out-of-memory errors !!!
 def reset_tf_session(nersc=False):

@@ -30,7 +30,7 @@ def train(architecture, n_features, training_dir, test_dir, epochs=300, verbose=
     if checkpoint is not None:
         _logger.info("Found initial_epoch={} in checkpoint {}".format(initial_epoch, checkpoint))
         autoencoder = keras.models.load_model(checkpoint)
-        autoencoder.compile(optimizer="adamax", loss='binary_crossentropy')
+        # autoencoder.compile(optimizer="adamax", loss='binary_crossentropy')
         encoder = autoencoder.layers[1]
         decoder = autoencoder.layers[2]
     else:

@@ -2,9 +2,7 @@ import numpy as np
 import logging
 from timeit import default_timer as timer
 from sklearn.mixture import GaussianMixture, BayesianGaussianMixture
-from sklearn.cluster import KMeans, DBSCAN, MeanShift, estimate_bandwidth
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, normalize
-from sklearn.metrics.pairwise import pairwise_distances
+from sklearn.cluster import KMeans, MeanShift, estimate_bandwidth
 from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score, calinski_harabaz_score
 
@@ -102,12 +100,16 @@ class Model:
                 for lidx in near_to_far:
                     idx = gidx[lidx]
                     cval = labler.evaluate(idx)
-                    if cval is not None:
+                    if cval is not None and np.isfinite(cval):
                         break
+            if cval is None or not np.isfinite(cval):
+                _logger.warning("Cannot label cluster {} using SEQ".format(len(oridx)))
+                print("Cannot label cluster {} using SEQ".format(len(oridx)))
             oridx.append(cval)
         oridx = np.array(oridx).astype('float32')
         img_shape = labler.img_shape()
-        return oridx[scores].reshape(img_shape)
+        Z = oridx[scores].reshape(img_shape)
+        return Z
 
     def compute_silhouette_score(self, data):
         X = data
@@ -244,7 +246,7 @@ class KMeansModel(Model):
         n_features = self.__n_features
         _logger.info('Running KMeans on %d samples using %d features for %d clusters ...' %
                      (len(samples), n_features, n_clusters))
-        estimator = KMeans(n_clusters=n_clusters, n_init=init)
+        estimator = KMeans(n_clusters=n_clusters, n_init=init, random_state=4)
         estimator.fit(samples)
         self._centroids = estimator.cluster_centers_
         _logger.info('Finished KMeans on %d samples using %d features for %d clusters. %.3f sec.' %
