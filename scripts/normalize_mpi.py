@@ -91,13 +91,13 @@ if __name__ == '__main__':
     init_mpi_logging("logging_mpi.yaml")
 
     file_names = []
+    input_dir = "/Volumes/G-DRIVE/xmax_tiff/SN3_a"
+    output_dir = "img/SN3_a"
     if MPI_RANK == 0:
         # existing_names = get_existing_names(["img/test_981"])
         existing_names = []
-        dir="I:\\\\xmax_tiff\\BTO_01_m_zoom"
-        file_names = get_file_names(dir, sample_rate=0.005, existing_names=existing_names)
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    process_images(file_names, os.path.join(dir_path, "img", "BTO_01_m_zoom"))
+        file_names = get_file_names(input_dir, sample_rate=1, existing_names=existing_names)
+    process_images(file_names, output_dir)
 
     # process_images(["img/test/au29_m1.tif"], "img/test")
     # reader = canon.TiffReader(canon.TiffReader.PILATUS)
