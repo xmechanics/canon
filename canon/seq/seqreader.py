@@ -30,7 +30,7 @@ class SeqReader:
             olist.append([imgn, nindex, ax, bx, cx, ay, by, cy, az, bz, cz])
         return olist
 
-    def get_Zmap(self, key, selection='nindex', thres=20):
+    def get_Zmap(self, key, selection='nindex', thres=0):
         data = self.__seq['data']
         imgn_list = set([d['image_num'] for d in data])
         xstage = [int(d['xstage']) for d in data]
@@ -54,7 +54,7 @@ class SeqReader:
         for x, y, z, n in zipped_data:
             ix = x_map[x]
             iy = y_map[y]
-            if N[iy, ix] < n and n >=thres:
+            if N[iy, ix] < n and n >= thres:
                 # if z < 0:
                 #    z += 180
                 Z[iy, ix] = z

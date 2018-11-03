@@ -94,8 +94,10 @@ if __name__ == '__main__':
     if MPI_RANK == 0:
         # existing_names = get_existing_names(["img/test_981"])
         existing_names = []
-        file_names = get_file_names("/Volumes/LaCie/scratch/sherry_Dec2017/C_4_2_aus_scan", sample_rate=1, existing_names=existing_names)
-    process_images(file_names, "img/C_4_2_aus_scan")
+        dir="I:\\\\xmax_tiff\\BTO_01_m_zoom"
+        file_names = get_file_names(dir, sample_rate=0.005, existing_names=existing_names)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    process_images(file_names, os.path.join(dir_path, "img", "BTO_01_m_zoom"))
 
     # process_images(["img/test/au29_m1.tif"], "img/test")
     # reader = canon.TiffReader(canon.TiffReader.PILATUS)

@@ -39,9 +39,9 @@ def init_mpi_logging(cfg_path=None, level=logging.DEBUG):
             logging.config.dictConfig(config)
         else:
             if MPI_COMM.size == 1:
-                logFormatter = logging.Formatter("%(asctime)s [%(threadName)s] %(levelname)s %(name)s:%(lineno)d - %(message)s")
+                logFormatter = logging.Formatter("[%(threadName)s] %(levelname)s %(name)s:%(lineno)d - %(message)s")
             else:
-                logFormatter = logging.Formatter("%(asctime)s [Process-" + str(MPI_RANK) + "] [%(threadName)s] %(levelname)s %(name)s:%(lineno)d - %(message)s")
+                logFormatter = logging.Formatter("[Process-" + str(MPI_RANK) + "] [%(threadName)s] %(levelname)s %(name)s:%(lineno)d - %(message)s")
             rootLogger = logging.getLogger()
             consoleHandler = logging.StreamHandler()
             consoleHandler.setFormatter(logFormatter)

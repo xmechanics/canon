@@ -2,6 +2,7 @@ import keras
 import keras.layers as L
 import numpy as np
 
+LINEAR = "linear"
 
 CONV_2 = "conv_2"
 CONV_3 = "conv_3"
@@ -30,6 +31,9 @@ def compile_autoencoder(encoder, decoder):
 
 
 def build(model_name: str, latent_features: int):
+    if model_name == LINEAR:
+        return linear((128, 128), latent_features)
+
     if model_name == CONV_2:
         return conv((128, 128), latent_features, conv=2)
     if model_name == CONV_3:
@@ -56,6 +60,23 @@ def build(model_name: str, latent_features: int):
 
     else:
         raise Exception("Unknown model name " + model_name)
+
+
+def linear(img_shape, n=256):
+    H, W = img_shape
+
+    encoder = keras.models.Sequential()
+    encoder.add(L.InputLayer(img_shape))
+    encoder.add(L.Reshape((H*W,)))
+    encoder.add(L.Dropout(0.5))
+    encoder.add(L.Dense(n))
+
+    decoder = keras.models.Sequential()
+    decoder.add(L.InputLayer((n,)))
+    decoder.add(L.Dropout(0.5))
+    decoder.add(L.Dense(H*W))
+    decoder.add(L.Reshape(img_shape))
+    return encoder, decoder
 
 
 def conv(img_shape, n=4, conv=4, dens=[]):
@@ -156,7 +177,7 @@ def conv2(img_shape, n=4, conv=4, dens=[]):
 if __name__ == "__main__":
     from canon.autoencode import reset_tf_session
     s = reset_tf_session()
-    encoder, decoder = conv((128, 128), n=256, conv=4)
+    encoder, decoder = linear((128, 128), n=256)
 
     encoder.summary()
     decoder.summary()

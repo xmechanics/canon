@@ -4,11 +4,11 @@ from canon.seq.seqreader import SeqReader
 
 class SeqLabeler:
 
-    def __init__(self, seqfiles):
+    def __init__(self, seqfiles, nidx_thres=0):
         Z_merged, N_merged = None, None
         readers = map(SeqReader, seqfiles)
         for reader in readers:
-            Z, N = reader.get_Zmap('orsnr___')
+            Z, N = reader.get_Zmap('orsnr___', thres=nidx_thres)
             if Z_merged is None:
                 Z_merged, N_merged = Z, N
             else:

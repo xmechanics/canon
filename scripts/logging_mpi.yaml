@@ -2,10 +2,10 @@ version: 1
 disable_existing_loggers: False
 formatters:
     simple:
-        format: "%(asctime)s {{MPI_RANK}} %(levelname)s %(name)s:%(lineno)d - %(message)s"
+        format: "{{MPI_RANK}} %(levelname)s %(name)s:%(lineno)d - %(message)s"
         datefmt: '%H:%M:%S'
     precise:
-        format: "%(asctime)s {{MPI_RANK}} %(levelname)s %(name)s:%(lineno)d - %(message)s"
+        format: "{{MPI_RANK}} %(levelname)s %(name)s:%(lineno)d - %(message)s"
         datefmt: '%Y-%m-%d %H:%M:%S.%s %Z'
 
 handlers:
