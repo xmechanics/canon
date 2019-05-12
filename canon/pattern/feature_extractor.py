@@ -67,9 +67,9 @@ class AllPeaksExtractor(FeaturesExtractor):
     @staticmethod
     def __neighbors(p, r=1):
         yield p
-        for x in xrange(-r, r + 1):
+        for x in range(-r, r + 1):
             ymax = int(np.floor(np.sqrt(r**2 - x**2)))
-            for y in xrange(-ymax, ymax + 1):
+            for y in range(-ymax, ymax + 1):
                 yield (p[0] + x, p[1] + y)
 
     @staticmethod
