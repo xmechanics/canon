@@ -18,7 +18,7 @@ if __name__ == "__main__":
     n_features = 256
 
     train(architecture, n_features,
-          os.path.join("img", "processed_981"),
-          os.path.join("img", "test_981"),
+          os.path.join("img", "training_20190517"),
+          os.path.join("img", "validation_20190517"),
           verbose=1,
           dryrun=False, use_generator=True)

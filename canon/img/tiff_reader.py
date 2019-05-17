@@ -44,7 +44,9 @@ class TiffReader:
 
     def normalize(self):
         img = self.__image
-        img2 = img.clip(1000, max(0.1*img.max(), 100000)) - 1000
+        low = 1000
+        high = max(0.1 * img.max(), 100000)
+        img2 = img.clip(low, high) - low
         img2 = np.log1p(img2)
         img2 = 255. * img2 / img2.max()
         # flatten = np.array(img.reshape(np.prod(img.shape))).clip(0, img.max())

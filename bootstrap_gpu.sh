@@ -22,7 +22,9 @@ if [[ ${STEP} == "1" ]]; then
     bash miniconda.sh -b
     ${HOME}/miniconda3/bin/conda init
 
-    cp -rf /mnt/efs/canon .
+    mkdir canon
+    cp -r /mnt/efs/canon/scripts canon/
+    ln -s /mnt/efs/canon/canon canon/canon
     ln -s /mnt/efs/logs canon/scripts/logs
     ln -s /mnt/efs/checkpoints canon/scripts/checkpoints
     pushd ~/canon/scripts/img && unzip img.zip && popd
