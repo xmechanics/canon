@@ -44,7 +44,6 @@ class TiffReader:
 
     def normalize(self):
         img = self.__image
-        print(img.max(), np.log1p([10, 100, img.max()]))
         img2 = img.clip(1000, max(0.1*img.max(), 100000)) - 1000
         img2 = np.log1p(img2)
         img2 = 255. * img2 / img2.max()
