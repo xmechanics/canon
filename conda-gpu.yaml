@@ -1,0 +1,19 @@
+name: canon
+channels:
+  - anaconda
+  - conda-forge
+dependencies:
+  - python=3.6
+  - tensorflow-gpu
+  - Keras
+  - pip
+  - h5py
+  - mpi4py
+  - Pillow
+  - numpy
+  - scipy
+  - pandas
+  - scikit-image
+  - scikit-learn
+  - joblib
+  - yaml

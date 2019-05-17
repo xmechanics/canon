@@ -1,0 +1,24 @@
+name: canon
+channels:
+  - conda-forge
+dependencies:
+  - python=3.6
+  - pip
+  - pip:
+    - pytest
+    - pytest-coverage
+    - pytest-xdist
+  - h5py
+  - mpi4py
+  - matplotlib
+  - Pillow
+  - numpy
+  - scipy
+  - pandas
+  - scikit-image
+  - scikit-learn
+  - tensorflow
+  - Keras
+  - joblib
+  - yaml
+  - jupyter

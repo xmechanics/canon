@@ -44,19 +44,23 @@ class TiffReader:
 
     def normalize(self):
         img = self.__image
-        flatten = np.array(img.reshape(np.prod(img.shape))).clip(0, img.max())
-        if np.where(flatten > 0)[0].shape[0] < 100:
-            img2 = np.log1p(flatten).reshape(img.shape)
-            if img2.max() > 0:
-                img2 = 255. * img2 / img2.max()
-        else:
-            low = np.percentile(flatten[np.where(flatten > 0)], 30)
-            high = np.percentile(flatten[np.where(flatten > 0)], 70)
-            flatten = flatten.clip(low, flatten.max()) - low
-            img2 = flatten.reshape(img.shape)
-            img2[np.where(img > high)] = 90. + 10. * (img[np.where(img > high)] - high) / (img.max() - high)
-            img2[np.where(img <= high)] = 90. * img2[np.where(img <= high)] / high
-            img2 = 2.25 * img2
+        print(img.max(), np.log1p([10, 100, img.max()]))
+        img2 = img.clip(1000, max(0.1*img.max(), 100000)) - 1000
+        img2 = np.log1p(img2)
+        img2 = 255. * img2 / img2.max()
+        # flatten = np.array(img.reshape(np.prod(img.shape))).clip(0, img.max())
+        # if np.where(flatten > 0)[0].shape[0] < 100:
+        #     img2 = np.log1p(flatten).reshape(img.shape)
+        #     if img2.max() > 0:
+        #         img2 = 255. * img2 / img2.max()
+        # else:
+        #     low = np.percentile(flatten[np.where(flatten > 0)], 30)
+        #     high = np.percentile(flatten[np.where(flatten > 0)], 70)
+        #     flatten = flatten.clip(low, flatten.max()) - low
+        #     img2 = flatten.reshape(img.shape)
+        #     img2[np.where(img > high)] = 90. + 10. * (img[np.where(img > high)] - high) / (img.max() - high)
+        #     img2[np.where(img <= high)] = 90. * img2[np.where(img <= high)] / high
+        #     img2 = 2.25 * img2
         self.__image = img2[10:981+10, :]
 
     def find_peaks(self, npeaks=float('inf')):

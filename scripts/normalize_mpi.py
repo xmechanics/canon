@@ -90,24 +90,28 @@ if __name__ == '__main__':
     from canon.common.init import init_mpi_logging
     init_mpi_logging("logging_mpi.yaml")
 
-    file_names = []
-    input_dir = "/Volumes/G-DRIVE/xmax_tiff/SN3_a"
-    output_dir = "img/SN3_a"
-    if MPI_RANK == 0:
-        # existing_names = get_existing_names(["img/test_981"])
-        existing_names = []
-        file_names = get_file_names(input_dir, sample_rate=1, existing_names=existing_names)
-    process_images(file_names, output_dir)
+    # file_names = []
+    # input_dir = "/Volumes/G-DRIVE/xmax_tiff/SN3_a"
+    # output_dir = "img/SN3_a"
+    # if MPI_RANK == 0:
+    #     # existing_names = get_existing_names(["img/test_981"])
+    #     existing_names = []
+    #     file_names = get_file_names(input_dir, sample_rate=1, existing_names=existing_names)
+    # process_images(file_names, output_dir)
 
     # process_images(["img/test/au29_m1.tif"], "img/test")
-    # reader = canon.TiffReader(canon.TiffReader.PILATUS)
+
+    reader = canon.TiffReader(canon.TiffReader.PILATUS)
     # reader.loadtiff("img/test/NiTi_30C_00672.tif")
-    # reader.remove_background()
-    # reader.normalize()
-    # img = reader.image()
-    # # img = resize(img, (128, 128), mode='reflect')
-    # img = Image.fromarray(img.astype(np.uint8))
-    # img.save(os.path.join("img/test", "test00001.jpg"))
+    # reader.loadtiff("img/test/BTO_25C_wb3_05677.tif")
+    reader.loadtiff("img/test/au29_area_00068.tif")
+
+    reader.remove_background()
+    reader.normalize()
+    img = reader.image()
+    # img = resize(img, (128, 128), mode='reflect')
+    img = Image.fromarray(img.astype(np.uint8))
+    img.save(os.path.join("img/test", "test00001.jpg"))
 
 
 

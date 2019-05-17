@@ -1,5 +1,8 @@
 import keras
+import keras.backend as K
 import keras.layers as L
+from keras import losses
+from keras import optimizers
 import numpy as np
 
 LINEAR = "linear"
@@ -11,11 +14,29 @@ CONV_5 = "conv_5"
 CONV_6 = "conv_6"
 CONV_7 = "conv_7"
 
+CONV_2_DENS_1 = "conv_2_dens_1"
+CONV_3_DENS_1 = "conv_3_dens_1"
+CONV_4_DENS_1 = "conv_4_dens_1"
 CONV_5_DENS_1 = "conv_5_dens_1"
 
 CONV2_2 = "conv2_2"
 CONV2_3 = "conv2_3"
 CONV2_5_DENS_1 = "conv2_5_dens1"
+
+
+def intensity_weight(y_true):
+    return K.log(20000 * y_true + 1) + 1
+
+
+def weighted_mse_loss(y_true, y_pred):
+    weights, normalizer = intensity_weight(y_true)
+    return K.mean(weights * K.square(y_true - y_pred))
+
+
+def weighted_bce_loss(y_true, y_pred):
+    weights, normalizer = intensity_weight(y_true)
+    bce = - y_true * K.log(y_pred + K.epsilon()) - (1 - y_true) * K.log(1 - y_pred + K.epsilon())
+    return K.mean(weights * bce)
 
 
 def compile_autoencoder(encoder, decoder):
@@ -25,7 +46,7 @@ def compile_autoencoder(encoder, decoder):
     reconstruction = decoder(code)
 
     autoencoder = keras.models.Model(inputs=inp, outputs=reconstruction)
-    autoencoder.compile(optimizer='adamax', loss='binary_crossentropy')
+    autoencoder.compile(optimizer=optimizers.Adam(), loss=losses.binary_crossentropy, metrics=['mse'])
 
     return autoencoder
 
@@ -47,6 +68,12 @@ def build(model_name: str, latent_features: int):
     if model_name == CONV_7:
         return conv((128, 128), latent_features, conv=7)
 
+    if model_name == CONV_2_DENS_1:
+        return conv((128, 128), latent_features, conv=2, dens=[1024])
+    if model_name == CONV_3_DENS_1:
+        return conv((128, 128), latent_features, conv=3, dens=[1024])
+    if model_name == CONV_4_DENS_1:
+        return conv((128, 128), latent_features, conv=4, dens=[1024])
     if model_name == CONV_5_DENS_1:
         return conv((128, 128), latent_features, conv=5, dens=[1024])
 
@@ -90,7 +117,7 @@ def conv(img_shape, n=4, conv=4, dens=[]):
         filters = 16 * (2 ** c)
         encoder.add(L.Conv2D(filters, kernel_size=(3, 3), activation='relu', padding='same'))
         encoder.add(L.MaxPooling2D(pool_size=(2, 2), padding='same'))
-        dropout = 0.2 if c == conv - 1 else 0.5
+        dropout = 0.2 if c == conv - 1 else 0.2
         encoder.add(L.Dropout(dropout))
     encoded_img_size = encoder.layers[-1].output_shape[1:]
     encoder.add(L.Flatten())
@@ -107,11 +134,11 @@ def conv(img_shape, n=4, conv=4, dens=[]):
     for d in reversed(dens):
         decoder.add(L.Dropout(0.5))
         decoder.add(L.Dense(d, activation='relu'))
-    decoder.add(L.Dropout(0.5))
+    decoder.add(L.Dropout(0.2))
     decoder.add(L.Dense(flatten_size, activation='relu'))
     decoder.add(L.Reshape(encoded_img_size))
     for c in range(conv - 1):
-        filters = 2 ** (conv - c + 2)
+        filters = 4 * 2 ** (conv - c)
         decoder.add(L.Dropout(0.2))
         decoder.add(L.Conv2DTranspose(filters=filters, kernel_size=(3, 3), strides=2, activation='relu', padding='same'))
     decoder.add(L.Conv2DTranspose(filters=1, kernel_size=(3, 3), strides=2, activation='sigmoid', padding='same'))
@@ -177,7 +204,7 @@ def conv2(img_shape, n=4, conv=4, dens=[]):
 if __name__ == "__main__":
     from canon.autoencode import reset_tf_session
     s = reset_tf_session()
-    encoder, decoder = linear((128, 128), n=256)
+    encoder, decoder = conv((128, 128), n=256, conv=3)
 
     encoder.summary()
     decoder.summary()
