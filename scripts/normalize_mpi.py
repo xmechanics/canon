@@ -36,7 +36,7 @@ def get_file_names(img_dir, sample_rate=0.1, existing_names=set()):
         path = os.path.join(img_dir, filename)
         if os.path.isdir(path):
             files_in_subdir += get_file_names(path, sample_rate=sample_rate, existing_names=existing_names)
-        elif np.random.rand(1) <= sample_rate and filename[-1]=='f':
+        elif np.random.rand(1) <= sample_rate and filename[-1] == 'f':
             file_names.append(os.path.join(img_dir, filename))
     file_names = [f for f in file_names if to_jpg_name(f) not in existing_names]
     file_names = file_names + files_in_subdir
@@ -61,15 +61,11 @@ def process_images(file_paths, output_dir):
     t0_loc = timer()
     for i, tiff in enumerate(filenames):
         jpg = to_jpg_name(tiff)
-
         reader = canon.TiffReader(canon.TiffReader.PILATUS)
         reader.loadtiff(tiff)
         reader.remove_background()
         reader.normalize()
         data = reader.image()
-        if np.median(data) > 0 or np.mean(data) < 1e-3:
-            print(jpg, np.median(data), np.max(data), np.mean(data))
-            # continue
         img = Image.fromarray(data.astype(np.uint8))
         img.save(os.path.join(output_dir, jpg))
 
@@ -86,26 +82,18 @@ def process_images(file_paths, output_dir):
 
 
 if __name__ == '__main__':
-    import pandas as pd
     from canon.common.init import init_mpi_logging
     init_mpi_logging("logging_mpi.yaml")
 
     # file_names = []
-    # input_dir = "/Volumes/G-DRIVE/xmax_tiff/SN3_a"
-    # output_dir = "img/SN3_a"
+    # output_dir = "img/new_test_processed"
     # if MPI_RANK == 0:
-    #     # existing_names = get_existing_names(["img/test_981"])
-    #     existing_names = []
-    #     file_names = get_file_names(input_dir, sample_rate=1, existing_names=existing_names)
+    #     file_names += get_file_names("/Volumes/G-DRIVE/xmax_tiff/others_2018", sample_rate=1)
+    #     file_names += get_file_names("/Volumes/G-DRIVE/xmax_tiff/AuCuZn_2016/AuCuZn_others", sample_rate=1)
     # process_images(file_names, output_dir)
 
-    # process_images(["img/test/au29_m1.tif"], "img/test")
-
     reader = canon.TiffReader(canon.TiffReader.PILATUS)
-    # reader.loadtiff("img/test/NiTi_30C_00672.tif")
-    # reader.loadtiff("img/test/BTO_25C_wb3_05677.tif")
-    reader.loadtiff("img/test/au29_area_00068.tif")
-
+    reader.loadtiff("img/test/Brg568_top_06021.tif")
     reader.remove_background()
     reader.normalize()
     img = reader.image()

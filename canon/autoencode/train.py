@@ -3,7 +3,7 @@ import logging
 import keras
 import keras.backend as K
 from keras import optimizers
-from keras.callbacks import TensorBoard, CSVLogger
+from keras.callbacks import TensorBoard, CSVLogger, ModelCheckpoint
 
 from canon.autoencode.feeder import ImageDataFeeder
 from canon.autoencode.builder import compile_autoencoder, build
@@ -55,7 +55,8 @@ def train(architecture, n_features, training_dir, test_dir, epochs=100, verbose=
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     callbacks = [TensorBoard(log_dir=os.path.join("logs", "{}_{}".format(architecture.lower(), n_features))),
-                 ModelSaveCallback(os.path.join(checkpoint_dir, "autoencoder.{0:03d}.hdf5")),
+                 ModelCheckpoint(filepath=os.path.join(checkpoint_dir, "autoencoder.{0:03d}.h5"),
+                                 monitor='val_loss', verbose=1, save_best_only=True),
                  CSVLogger(os.path.join(checkpoint_dir, "history.csv"), separator=',', append=False)]
 
     if use_generator:
