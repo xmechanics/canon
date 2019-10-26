@@ -123,7 +123,7 @@ def conv(img_shape, n=4, conv=4, dens=[]):
     encoder.add(L.Flatten())
     for d in dens:
         encoder.add(L.Dense(d, activation='relu'))
-        encoder.add(L.Dropout(0.5))
+        encoder.add(L.Dropout(0.2))
     encoder.add(L.Dense(n, activation='relu'))
 
     flatten_size = np.prod(encoded_img_size)
@@ -132,7 +132,7 @@ def conv(img_shape, n=4, conv=4, dens=[]):
     decoder = keras.models.Sequential()
     decoder.add(L.InputLayer((n,)))
     for d in reversed(dens):
-        decoder.add(L.Dropout(0.5))
+        decoder.add(L.Dropout(0.2))
         decoder.add(L.Dense(d, activation='relu'))
     decoder.add(L.Dropout(0.2))
     decoder.add(L.Dense(flatten_size, activation='relu'))
