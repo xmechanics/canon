@@ -41,8 +41,8 @@ Hopefully, the code is sufficiently self-explanatory.
     (The console output has a url like: http://localhost:8888/lab?token=blahblahbla, open that url in browser.)
 6. In Jupyter Lab
     1. First, use `extract_features.ipynb` notebook. It converts jpg to feature metrics with selected models.
-       Pick `models = ['ae_conv_4_256_best']`.
-    2. After features matrices are generated and saved to disk, go to one of the `ex_...` notebook to analyze the features, wit the chosen model.
+    2. Pick `models = ['ae_conv_4_256_best']`.
+    3. After features matrices are generated and saved to disk, go to one of the `ex_...` notebook to analyze the features, wit the chosen model.
 
 ## Dependencies
 
