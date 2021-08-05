@@ -4,7 +4,7 @@ from timeit import default_timer as timer
 from sklearn.mixture import GaussianMixture, BayesianGaussianMixture
 from sklearn.cluster import KMeans, MeanShift, estimate_bandwidth
 from sklearn.decomposition import PCA
-from sklearn.metrics import silhouette_score, calinski_harabaz_score
+from sklearn.metrics import silhouette_score, calinski_harabasz_score
 
 from canon.pattern.labeler import SeqLabeler
 
