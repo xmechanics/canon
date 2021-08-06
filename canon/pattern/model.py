@@ -121,7 +121,7 @@ class Model:
         X = data
         for preprocessor in self.__preprocessors:
             X = preprocessor.transform(X)
-        return calinski_harabaz_score(data, self._estimator.predict(X))
+        return calinski_harabasz_score(data, self._estimator.predict(X))
 
     def train(self, data, preprocessors=None, n_clusters=None):
         n_patterns = len(data)
