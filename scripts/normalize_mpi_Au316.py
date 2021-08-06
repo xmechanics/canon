@@ -94,8 +94,8 @@ if __name__ == '__main__':
 
     file_names = []
     # input_dir = "/Volumes/G-DRIVE/BL1232_Oct2019/samp4-1-2_pillar"
-    input_dir = "/Users/sherrychen/scratch/xmas_tiff/AuCuZn_2020/Au316_RT"
-    output_dir = "img/Au316_RT"
+    input_dir = "/Users/sherrychen/scratch/xmas_tiff/AuCuZn_2020/Au324_p100"
+    output_dir = "img/Au324_p100"
     if MPI_RANK == 0:
         # existing_names = get_existing_names(["img/test_981"])
         existing_names = []
