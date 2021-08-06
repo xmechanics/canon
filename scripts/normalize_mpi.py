@@ -91,8 +91,8 @@ if __name__ == '__main__':
     init_mpi_logging("logging_mpi.yaml")
 
     file_names = []
-    input_dir = "/Volumes/G-DRIVE/BL1232_Oct2019/samp4-1-2_pillar"
-    output_dir = "img/samp4-1-2_pillar_40_50"
+    input_dir = "/Volumes/G-DRIVE/BL1232_Oct2019/samp182-1"
+    output_dir = "img/samp182-1"
     if MPI_RANK == 0:
         # existing_names = get_existing_names(["img/test_981"])
         existing_names = []
