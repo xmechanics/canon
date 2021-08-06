@@ -21,4 +21,4 @@ dependencies:
   - Keras
   - joblib
   - yaml
-  - jupyter
+  - jupyterlab
