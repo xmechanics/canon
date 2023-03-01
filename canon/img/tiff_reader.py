@@ -1,4 +1,4 @@
-from skimage.external.tifffile import imread
+from tifffile import imread
 
 from canon.__imports import *
 from canon.img.subtract_bg import subtract

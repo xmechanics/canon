@@ -1,9 +1,5 @@
 # Canon #
 
-[![Travis Status](https://travis-ci.org/structrans/Canon.svg?branch=master)](https://travis-ci.org/structrans/Canon)
-[![Coverage Status](https://coveralls.io/repos/structrans/Canon/badge.svg?branch=master&service=github)](https://coveralls.io/github/structrans/Canon?branch=master)
-[![Codeship Status](https://codeship.com/projects/1dcd7cc0-0fe7-0133-d4b2-1e6fe7bb1028/status?branch=master)](https://codeship.com/projects/91981)
-
 Canon is a python package for X-Ray Laue diffractometer analysis.
 
 Download and upzip the repository. Install the package by running the following in the unzipped folder:
@@ -23,17 +19,14 @@ Hopefully, the code is sufficiently self-explanatory.
 1. Install [Miniconda](http://conda.pydata.org/miniconda.html).
 2. Create conda env, run following command under project root
     ```shell
-    conda env update -f conda.yaml
+    conda env update -f conda-env.yaml -p ./venv
     ```
 3. Activate it
     ```shell
-    source activate canon
+    conda activate ./venv
     ```
-    or
-    ```shell
-    conda activate canon
-    ```
-4. While the `canon` conda environment is activated, in `scripts` folder, modify `normalize_mpi.py` to convert tiff files to jpg in parallel
+4. While the virtual environment is activated, in `scripts` folder, modify `normalize_mpi.py` to convert tiff files to jpg in parallel
+    1. Put input tiff and output jpg in the `scripts/data` folder
 5. Still in `scripts` folder, start jupyterlab
     ```shell
     jupyter-lab
