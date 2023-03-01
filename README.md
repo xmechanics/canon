@@ -25,7 +25,7 @@ Hopefully, the code is sufficiently self-explanatory.
     ```shell
     conda activate ./venv
     ```
-4. While the virtual environment is activated, in `scripts` folder, modify `normalize_mpi.py` to convert tiff files to jpg in parallel
+4. While the virtual environment is activated, in `scripts` folder, copy `normalize_mpi.py` and modify to convert tiff files to jpg in parallel
     1. Put input tiff and output jpg in the `scripts/data` folder
 5. Still in `scripts` folder, start jupyterlab
     ```shell
@@ -33,9 +33,9 @@ Hopefully, the code is sufficiently self-explanatory.
     ```
     (The console output has a url like: http://localhost:8888/lab?token=blahblahbla, open that url in browser.)
 6. In Jupyter Lab
-    1. First, use `extract_features.ipynb` notebook. It converts jpg to feature metrics with selected models.
+    1. First, copy `extract_features.ipynb` notebook and modify. It converts jpg to feature metrics with selected models.
     2. Pick `models = ['ae_conv_4_256_best']`.
-    3. After features matrices are generated and saved to disk, go to one of the `ex_...` notebook to analyze the features, wit the chosen model.
+    3. After features matrices are generated and saved to disk, copy one of the `ex_...` notebooks and modify to analyze the features, with the chosen model.
 
 ## Dependencies
 
