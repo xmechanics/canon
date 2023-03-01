@@ -1,8 +1,7 @@
-name: canon
 channels:
   - conda-forge
 dependencies:
-  - python=3.6
+  - python=3.10
   - pip
   - pip:
     - pytest
