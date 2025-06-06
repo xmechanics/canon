@@ -1,2 +1,4 @@
-/models
 !/models/ae_conv_4_256_best
+!/models/resnet50_256
+/models
+/mnt

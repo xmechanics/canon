@@ -1,0 +1,27 @@
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.10
+  - pip
+  - h5py
+  - mpi4py
+  - matplotlib
+  - Pillow
+  - numpy
+  - scipy
+  - pandas
+  - scikit-image
+  - scikit-learn
+  - tensorflow=2.12.1
+  - keras=2.12.0
+  - joblib
+  - pyyaml
+  - jupyterlab
+  - ipython<8.24
+  - typing-extensions=4.5.0
+
+  - pip:
+    - pytest
+    - pytest-coverage
+    - pytest-xdist

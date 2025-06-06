@@ -1,0 +1,19 @@
+channels:
+  - conda-forge
+  - pytorch
+  - nvidia
+dependencies:
+  - python=3.12
+  - tensorflow-gpu
+  - Keras
+  - pip
+  - h5py
+  - mpi4py
+  - Pillow
+  - numpy
+  - scipy
+  - pandas
+  - scikit-image
+  - scikit-learn
+  - joblib
+  - pyyaml

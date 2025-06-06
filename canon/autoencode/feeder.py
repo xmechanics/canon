@@ -5,6 +5,9 @@ from skimage.io import imread
 from skimage.transform import resize
 from keras.utils import Sequence
 from joblib import Parallel, delayed
+import multiprocessing
+
+from .report import is_using_gpu
 
 _logger = logging.getLogger(__name__)
 
@@ -26,6 +29,7 @@ class ImageDataFeeder(Sequence):
         self.training_files = [filename for filename in os.listdir(training_dir) if
                                (not filename[0] == '.') and filename[-4:] == ".jpg"
                                and (filename not in set(self.test_files))]
+        self.parallelism = -1
         np.random.shuffle(self.training_files)
         _logger.info("Initialized a WhiteSequence of %d training images and %d test images" %
                      (len(self.training_files), len(self.test_files)))
@@ -45,24 +49,48 @@ class ImageDataFeeder(Sequence):
         _logger.info("Reading %d image files into array" % len(file_names))
 
         if parallel:
-            with Parallel(n_jobs=-1, verbose=11) as parallel:
+            with Parallel(n_jobs=self.parallelism, verbose=11) as parallel:
                 data = parallel(delayed(load_img)((os.path.join(dir_name, f)), self.img_shape) for f in file_names)
         else:
             data = [load_img(os.path.join(dir_name, f), self.img_shape) for f in file_names]
+        
+        # Convert to numpy array before enriching to ensure consistent shapes
+        data = np.array(data)
+        _logger.info("data shape: {}".format(data.shape))
 
         if enrich:
             _logger.info("Enriching %d image data" % len(data))
-            # flip X
-            data2 = [np.flip(A, 0) for A in data]
-            # flip Y
-            data3 = [np.flip(A, 1) for A in data]
-            # transpose
-            data4 = [A.T for A in data]
-            # transpose and flip
-            data5 = [np.flip(A.T, 0) for A in data]
-            data = data + data2 + data3 + data4 + data5
 
-        data = np.array(data)
+            # Check if data is 3D or 4D
+            if data.ndim == 3:
+                # (N, H, W) --> grayscale
+                axis_h, axis_w = 1, 2
+            elif data.ndim == 4:
+                # (N, H, W, C) --> with channels
+                axis_h, axis_w = 1, 2
+            else:
+                raise ValueError(f"Unexpected data shape: {data.shape}")
+
+            # Flip along height (vertical flip)
+            data_flip_h = np.flip(data, axis=axis_h)
+
+            # Flip along width (horizontal flip)
+            data_flip_w = np.flip(data, axis=axis_w)
+
+            # Transpose H and W
+            if data.ndim == 3:
+                data_transpose = np.transpose(data, (0, 2, 1))  # (N, W, H)
+            else:
+                data_transpose = np.transpose(data, (0, 2, 1, 3))  # (N, W, H, C)
+
+            # Transpose and flip vertically
+            data_transpose_flip = np.flip(data_transpose, axis=axis_h)
+
+            # Concatenate all augmented data
+            data = np.concatenate([data, data_flip_h, data_flip_w, data_transpose, data_transpose_flip], axis=0)
+
+            _logger.info("Enriched data shape: {}".format(data.shape))
+
         _logger.info("Loaded a data of shape {}: max={}, min={}".format(data.shape, data.max(), data.min()))
         return data
 

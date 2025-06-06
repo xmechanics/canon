@@ -1,9 +1,7 @@
-name: canon
 channels:
-  - anaconda
   - conda-forge
 dependencies:
-  - python=3.6
+  - python=3.12
   - tensorflow-gpu
   - Keras
   - pip
