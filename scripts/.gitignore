@@ -11,3 +11,4 @@ features/*
 !features/.gitkeep
 *.log
 .ipynb_checkpoints
+/__*.ipynb
