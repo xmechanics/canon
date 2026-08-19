@@ -12,3 +12,4 @@ features/*
 *.log
 .ipynb_checkpoints
 /__*.ipynb
+/__*.py
